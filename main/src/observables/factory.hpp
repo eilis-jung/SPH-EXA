@@ -39,6 +39,7 @@
 #include "time_energies.hpp"
 #include "gravitational_waves.hpp"
 #include "wind_bubble_fraction.hpp"
+#include "init/wind_shock_init.hpp"
 
 namespace sphexa
 {
