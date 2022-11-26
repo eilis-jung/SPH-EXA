@@ -1,0 +1,46 @@
+name: Check C++ formatting
+
+on:
+  - push
+
+jobs:
+  check:
+    env:
+        TZ: Europe/Zurich
+        DEBIAN_FRONTEND: noninteractive
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install clang-format-14
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+          sudo chmod a+w /etc/apt/sources.list
+          echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main" >> /etc/apt/sources.list
+          sudo apt update
+          sudo apt install -y --no-install-recommends clang-format-14
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+#       - name: Setup tmate debug session
+#         uses: mxschmitt/action-tmate@v3
+
+      - name: fetch origin and run clang-format
+        run: |
+          git fetch --no-tags --depth=1 https://github.com/unibas-dmi-hpc/SPH-EXA.git develop
+          # git remote -v
+          # git log -n2 --format='%H'
+          # git diff --name-only FETCH_HEAD
+          clang-format-14 --version
+          clang-format-14 -i --style=file `git diff --name-only FETCH_HEAD |grep -E "\.(cpp|hpp|h|cu)$"` || true
+#           echo "step1:"
+#           (clang-format-14 -n --style=file `git diff --name-only FETCH_HEAD |grep -E "\.(cpp|hpp|h|cu)$"` || true) 2> rpt
+#           echo "step2:"
+#           if [ -s rpt ] ;then grep 'code should be clang-formatted' rpt; exit 1; else echo "no formatting issue" ; fi
+#           echo "done"
+
+      - name: report formating issues (if any)
+        if: always()
+        run: |
+          git diff --name-only
+          git diff --color --exit-code
+          git diff --name-only

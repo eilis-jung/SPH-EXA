@@ -1,0 +1,22 @@
+{
+    "files.associations": {
+        "type_traits": "cpp",
+        "tuple": "cpp",
+        "bit": "cpp",
+        "*.tcc": "cpp",
+        "streambuf": "cpp",
+        "fstream": "cpp",
+        "istream": "cpp",
+        "locale": "cpp",
+        "array": "cpp",
+        "__bit_reference": "cpp",
+        "algorithm": "cpp",
+        "ios": "cpp",
+        "memory": "cpp",
+        "functional": "cpp",
+        "utility": "cpp",
+        "variant": "cpp",
+        "__functional_base": "cpp",
+        "thread": "cpp"
+    }
+}
