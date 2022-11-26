@@ -4,6 +4,7 @@ include_directories("${VISUALIZATION_EXTERN_PATH}/glm")
 include_directories("${VISUALIZATION_EXTERN_PATH}/VulkanSDK/include")
 include_directories("${VISUALIZATION_EXTERN_PATH}/glfw/include")
 include_directories("${VISUALIZATION_EXTERN_PATH}/stb")
+include_directories("${VISUALIZATION_EXTERN_PATH}/tinyobjloader")
 
 include_directories("${GENERATED_SHADERS_PATH}")
 # add_library(visualization core.cpp)

@@ -10,3 +10,6 @@
 [submodule "visualization/extern/stb"]
 	path = visualization/extern/stb
 	url = https://github.com/nothings/stb.git
+[submodule "visualization/extern/tinyobjloader"]
+	path = visualization/extern/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader.git

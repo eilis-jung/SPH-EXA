@@ -32,7 +32,6 @@ namespace sphexa
         void idle();
 
     private:
-        std::string m_texture_path = "../../../asset/images/viking_room.png";
         GLFWwindow* m_window;
         int         m_max_frames_in_flight = 2;
 

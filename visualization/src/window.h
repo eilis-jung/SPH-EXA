@@ -52,7 +52,7 @@ namespace sphexa
             glfwSetMouseButtonCallback(m_pGLFWWindow, Window::mouseDownCallback);
             glfwSetCursorPosCallback(m_pGLFWWindow, Window::mouseMoveCallback);
             glfwSetFramebufferSizeCallback(m_pGLFWWindow, Window::framebufferResizeCallback);
-            m_elements = std::shared_ptr<Elements> ();
+            m_elements = std::make_shared<Elements> ();
             m_vulkanInstance.init(m_pGLFWWindow, m_elements);
         }
 

@@ -1135,7 +1135,7 @@ namespace sphexa
     void VulkanInstance::createTextureImage()
     {
         int            texWidth, texHeight, texChannels;
-        stbi_uc*       pixels = stbi_load(m_texture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc*       pixels = stbi_load(m_elements->m_texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         vk::DeviceSize imageSize = texWidth * texHeight * 4;
 
         if (!pixels)
