@@ -1,3 +1,12 @@
 [submodule "extern/grackle/grackle_repo"]
 	path = extern/grackle/grackle_repo
 	url = https://github.com/grackle-project/grackle
+[submodule "visualization/extern/glm"]
+	path = visualization/extern/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "visualization/extern/glfw"]
+	path = visualization/extern/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "visualization/extern/stb"]
+	path = visualization/extern/stb
+	url = https://github.com/nothings/stb.git

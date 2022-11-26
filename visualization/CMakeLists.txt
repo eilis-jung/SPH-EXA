@@ -27,15 +27,30 @@ if(UNIX)
         set(vulkan_lib ${THIRD_PARTY_DIR}/VulkanSDK/lib/libvulkan.so.1)
         set(glslangValidator_executable ${THIRD_PARTY_DIR}/VulkanSDK/bin/glslangValidator)
         add_compile_definitions("VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin")
+        set(VULKAN_LIB "${THIRD_PARTY_DIR}/VulkanSDK/Lib")
+        find_library(Vulkan_LIBRARY NAMES vulkan-1 vulkan PATHS ${VULKAN_LIB})
     endif()
 else()
     message(FATAL_ERROR "Unknown Platform!")
 endif()
 
+# Special compiler flags for Vulkan
+# Wunused-result is a usual practice in Vulkan programming -- has to be ignored
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	add_compile_options(-Werror -Weverything)
+    add_compile_options(-Wno-unused-result)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+	add_compile_options(-O2)
+	add_compile_options(-Wno-unused-result)
+endif()
+
+
+add_subdirectory ("extern")
 # Shader compiler
 set(SHADER_COMPILE_TARGET ShaderCompile)
 add_subdirectory(shader)
 add_subdirectory(src)
+
 # if (BUILD_TESTING)
 #   add_subdirectory(test)
 # endif ()

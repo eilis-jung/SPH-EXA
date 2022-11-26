@@ -9,5 +9,5 @@ For development, you need the following packages installed (in Ubuntu 22.04):
 2. 
 
 ```
-apt install libglfw3-dev libglew-dev
+apt install libglfw3-dev libglew-dev libxinerama-dev libxcursor-dev libxi-dev
 ```
