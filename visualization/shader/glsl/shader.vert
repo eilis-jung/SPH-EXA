@@ -1,5 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_GOOGLE_include_directive :enable
+
+#include "constants.h"
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -28,6 +31,6 @@ void main() {
     //fragColor = normalize(inVelocity.xyz);
     float grayColor = inColor.x * 0.299 + inColor.y * 0.587 + inColor.z + 0.114;
     fragColor = vec3(grayColor, grayColor, grayColor);
-    //fragColor = vec3(inColor);
+    fragColor = vec3(inColor);
     //fragTexCoord = inTexCoord;
 }

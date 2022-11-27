@@ -6,7 +6,7 @@ bool   Window::m_mouse_left_down   = false;
 bool   Window::m_mouse_right_down  = false;
 double Window::m_prev_x            = 0;
 double Window::m_prev_y            = 0;
-double Window::m_mouse_sensitivity = 0.5;
+double Window::m_mouse_sensitivity = 0.1;
 bool   Window::framebufferResized  = false;
 
 void Window::mouseDownCallback(GLFWwindow* window, int button, int action, int mods)
@@ -51,8 +51,6 @@ void Window::mouseButtonReleaseRight(GLFWwindow* window, double pos_x, double po
 
 void Window::mouseMoveCallback(GLFWwindow* window, double pos_x, double pos_y)
 {
-    // auto                         component  = ComponentManager::getInstance().get(1);
-    // std::shared_ptr<Application> app       = std::static_pointer_cast<Application>(component);
     if (m_mouse_left_down)
     {
         float delta_x = static_cast<float>((m_prev_x - pos_x) * m_mouse_sensitivity);
@@ -61,13 +59,15 @@ void Window::mouseMoveCallback(GLFWwindow* window, double pos_x, double pos_y)
         m_prev_x = pos_x;
         m_prev_y = pos_y;
 
-        // app->m_physics->updateOrbit(delta_x, delta_y, 0.0f);
+        Window* w = static_cast<Window *>(glfwGetWindowUserPointer(window));
+        w->m_elements->updateOrbit(delta_x, delta_y, 0.0f);
     }
     else if (m_mouse_right_down)
     {
         float delta_z = static_cast<float>((m_prev_y - pos_y) * 0.05f);
         m_prev_y      = pos_y;
-        // app->m_physics->updateOrbit(0.0f, 0.0f, delta_z);
+        Window* w = static_cast<Window *>(glfwGetWindowUserPointer(window));
+        w->m_elements->updateOrbit(0.0f, 0.0f, delta_z);
     }
 }
 void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)

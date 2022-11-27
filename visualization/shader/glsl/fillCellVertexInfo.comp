@@ -1,7 +1,9 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-// #define PARTICLE_COUNT 14112
+#extension GL_GOOGLE_include_directive :enable
+
+#include "constants.h"
 
 struct Vertex {
     vec4 position;
@@ -37,9 +39,6 @@ void main() {
 	int temp = num_vertices;
 	// identity the cell id of each particle
 	const float gridSize = 0.1f;
-	const float width = 10.f;   // Y
-	const float length = 10.f;  // X
-	const float height = 10.f;  // Z
 
 	vec3 pos = verticesA[index].position.xyz;
 

@@ -17,38 +17,29 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-set(CSTONE_DIR ${CMAKE_SOURCE_DIR}/domain/include)
-
 # Vulkan dependencies -- only tested on Ubuntu 22.04!
-set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/extern)
+set(VISUALIZATION_EXTERN_PATH "${PROJECT_SOURCE_DIR}/extern")
 if(UNIX)
     if(NOT APPLE)
-        set(vulkan_include ${THIRD_PARTY_DIR}/VulkanSDK/include)
-        set(vulkan_lib ${THIRD_PARTY_DIR}/VulkanSDK/lib/libvulkan.so.1)
-        set(glslangValidator_executable ${THIRD_PARTY_DIR}/VulkanSDK/bin/glslangValidator)
-        add_compile_definitions("VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin")
-        set(VULKAN_LIB "${THIRD_PARTY_DIR}/VulkanSDK/Lib")
+        set(vulkan_include ${VISUALIZATION_EXTERN_PATH}/VulkanSDK/include)
+        set(vulkan_lib ${VISUALIZATION_EXTERN_PATH}/VulkanSDK/lib/libvulkan.so.1)
+        set(glslangValidator_executable ${VISUALIZATION_EXTERN_PATH}/VulkanSDK/bin/glslangValidator)
+        add_compile_definitions("VK_LAYER_PATH=${VISUALIZATION_EXTERN_PATH}/VulkanSDK/bin")
+        set(VULKAN_LIB "${VISUALIZATION_EXTERN_PATH}/VulkanSDK/Lib")
         find_library(Vulkan_LIBRARY NAMES vulkan-1 vulkan PATHS ${VULKAN_LIB})
     endif()
 else()
     message(FATAL_ERROR "Unknown Platform!")
 endif()
 
-# Special compiler flags for Vulkan
-# Wunused-result is a usual practice in Vulkan programming -- has to be ignored
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	add_compile_options(-Werror -Weverything)
-    add_compile_options(-Wno-unused-result)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-	add_compile_options(-O2)
-	add_compile_options(-Wno-unused-result)
-endif()
-
-
-add_subdirectory ("extern")
 # Shader compiler
 set(SHADER_COMPILE_TARGET ShaderCompile)
 add_subdirectory(shader)
+
+set(CSTONE_DIR ${CMAKE_SOURCE_DIR}/domain/include)
+
+# Install assets
+add_subdirectory ("extern")
 add_subdirectory(src)
 
 # if (BUILD_TESTING)

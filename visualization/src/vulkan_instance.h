@@ -29,6 +29,7 @@ namespace sphexa
         void init(GLFWwindow* pWindow, std::shared_ptr<Elements> pElements);
         void cleanup();
         void drawFrame();
+        void drawFrameWithUpdatedVertices();
         void idle();
 
     private:
@@ -171,5 +172,6 @@ namespace sphexa
         void cleanupSwapChain();
         void recreateSwapChain();
         void updateUniformBuffer(uint32_t currentImage);
+        void updateVertexBuffer();
     };
 } // namespace sphexa

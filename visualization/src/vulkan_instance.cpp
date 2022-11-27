@@ -177,6 +177,91 @@ namespace sphexa
         m_currentFrame = (m_currentFrame + 1) % m_max_frames_in_flight;
     }
 
+    void VulkanInstance::drawFrameWithUpdatedVertices()
+    {
+        m_device->waitForFences(1, &m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+
+        uint32_t imageIndex;
+        try
+        {
+            vk::ResultValue result = m_device->acquireNextImageKHR(
+                m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphores[m_currentFrame], nullptr);
+            imageIndex = result.value;
+        }
+        catch (vk::OutOfDateKHRError err)
+        {
+            recreateSwapChain();
+            return;
+        }
+        catch (vk::SystemError err)
+        {
+            throw std::runtime_error("failed to acquire swap chain image!");
+        }
+
+        vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_raw_verts.size() * sizeof(Vertex));
+        copyBuffer(m_vertexBuffer2, m_vertexBuffer1, bufferSize);
+        updateUniformBuffer(imageIndex);
+        updateVertexBuffer();
+        vk::SubmitInfo submitInfo = {};
+
+        vk::Semaphore          waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
+        vk::PipelineStageFlags waitStages[]     = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+        submitInfo.waitSemaphoreCount           = 1;
+        submitInfo.pWaitSemaphores              = waitSemaphores;
+        submitInfo.pWaitDstStageMask            = waitStages;
+
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers    = &m_commandBuffers[imageIndex];
+
+        vk::Semaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
+        submitInfo.signalSemaphoreCount  = 1;
+        submitInfo.pSignalSemaphores     = signalSemaphores;
+
+        m_device->resetFences(1, &m_inFlightFences[m_currentFrame]);
+
+        try
+        {
+            m_graphicsQueue.submit(submitInfo, m_inFlightFences[m_currentFrame]);
+        }
+        catch (vk::SystemError err)
+        {
+            throw std::runtime_error("failed to submit draw command buffer!");
+        }
+
+        vk::PresentInfoKHR presentInfo = {};
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores    = signalSemaphores;
+
+        vk::SwapchainKHR swapChains[] = {m_swapChain};
+        presentInfo.swapchainCount    = 1;
+        presentInfo.pSwapchains       = swapChains;
+        presentInfo.pImageIndices     = &imageIndex;
+
+        vk::Result resultPresent;
+        try
+        {
+            resultPresent = m_presentQueue.presentKHR(presentInfo);
+        }
+        catch (vk::OutOfDateKHRError err)
+        {
+            resultPresent = vk::Result::eErrorOutOfDateKHR;
+        }
+        catch (vk::SystemError err)
+        {
+            throw std::runtime_error("failed to present swap chain image!");
+        }
+
+        if (resultPresent == vk::Result::eSuboptimalKHR || resultPresent == vk::Result::eSuboptimalKHR ||
+            m_framebufferResized)
+        {
+            m_framebufferResized = false;
+            recreateSwapChain();
+            return;
+        }
+
+        m_currentFrame = (m_currentFrame + 1) % m_max_frames_in_flight;
+    }
+
     void VulkanInstance::idle() { m_device->waitIdle(); }
 
     bool VulkanInstance::checkValidationLayerSupport()
@@ -1271,7 +1356,6 @@ namespace sphexa
     void VulkanInstance::createVertexBuffers()
     {
         vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_raw_verts.size() * sizeof(Vertex));
-        // vk::DeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
         vk::Buffer       stagingBuffer;
         vk::DeviceMemory stagingBufferMemory;
@@ -2113,6 +2197,14 @@ namespace sphexa
         void* data = m_device->mapMemory(m_uniformUboBuffersMemory[currentImage], 0, sizeof(ubo));
         memcpy(data, &ubo, sizeof(ubo));
         m_device->unmapMemory(m_uniformUboBuffersMemory[currentImage]);
+    }
+
+    void VulkanInstance::updateVertexBuffer()
+    {
+        vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_raw_verts.size() * sizeof(Vertex));
+        void* data = m_device->mapMemory(m_vertexBufferMemory1, 0, bufferSize);
+        memcpy(data, m_elements->m_raw_verts.data(), (size_t)bufferSize);
+        m_device->unmapMemory(m_vertexBufferMemory1);
     }
 
 } // namespace sphexa
