@@ -733,21 +733,25 @@ void VulkanInstance::createDescriptorSetLayout()
     viewMatrixLayoutBinding.stageFlags         = vk::ShaderStageFlagBits::eVertex;
     viewMatrixLayoutBinding.pImmutableSamplers = nullptr; // Optional, used for image sampling related descriptors
 
-    vk::DescriptorSetLayoutBinding elementStatusLayoutBinding{};
-    elementStatusLayoutBinding.binding = 1;
-    elementStatusLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-    elementStatusLayoutBinding.descriptorCount    = 1;
-    elementStatusLayoutBinding.stageFlags         = vk::ShaderStageFlagBits::eVertex;
-    elementStatusLayoutBinding.pImmutableSamplers = nullptr;
-
     vk::DescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding            = 2;
+    samplerLayoutBinding.binding            = 1;
     samplerLayoutBinding.descriptorCount    = 1;
     samplerLayoutBinding.descriptorType     = vk::DescriptorType::eCombinedImageSampler;
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    std::vector<vk::DescriptorSetLayoutBinding> bindings = {viewMatrixLayoutBinding, elementStatusLayoutBinding, samplerLayoutBinding};
+    vk::DescriptorSetLayoutBinding elementStatusLayoutBinding{};
+    elementStatusLayoutBinding.binding = 2;
+    elementStatusLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+    elementStatusLayoutBinding.descriptorCount    = 1;
+    elementStatusLayoutBinding.stageFlags         = vk::ShaderStageFlagBits::eVertex;
+    elementStatusLayoutBinding.pImmutableSamplers = nullptr;
+
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {
+        viewMatrixLayoutBinding, 
+        samplerLayoutBinding,
+        // elementStatusLayoutBinding
+        };
     vk::DescriptorSetLayoutCreateInfo             descriptorLayoutInfo{};
     descriptorLayoutInfo.flags        = vk::DescriptorSetLayoutCreateFlags();
     descriptorLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -830,8 +834,6 @@ void VulkanInstance::createGraphicsPipeline()
     depthStencil.minDepthBounds        = 0.0f; // Optional
     depthStencil.maxDepthBounds        = 1.0f; // Optional
     depthStencil.stencilTestEnable     = VK_FALSE;
-    // depthStencil.front = {}; // Optional
-    // depthStencil.back = {}; // Optional
 
     vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
@@ -1399,20 +1401,6 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
     computeLayoutBindingVertices2.pImmutableSamplers = nullptr;
     computeLayoutBindingVertices2.stageFlags         = vk::ShaderStageFlagBits::eCompute;
 
-    // vk::DescriptorSetLayoutBinding computeLayoutBindingCellVertexArray{};
-    // computeLayoutBindingCellVertexArray.binding            = 2;
-    // computeLayoutBindingCellVertexArray.descriptorCount    = 1;
-    // computeLayoutBindingCellVertexArray.descriptorType     = vk::DescriptorType::eStorageBuffer;
-    // computeLayoutBindingCellVertexArray.pImmutableSamplers = nullptr;
-    // computeLayoutBindingCellVertexArray.stageFlags         = vk::ShaderStageFlagBits::eCompute;
-
-    // vk::DescriptorSetLayoutBinding computeLayoutBindingCellVertexCount{};
-    // computeLayoutBindingCellVertexCount.binding            = 3;
-    // computeLayoutBindingCellVertexCount.descriptorCount    = 1;
-    // computeLayoutBindingCellVertexCount.descriptorType     = vk::DescriptorType::eStorageBuffer;
-    // computeLayoutBindingCellVertexCount.pImmutableSamplers = nullptr;
-    // computeLayoutBindingCellVertexCount.stageFlags         = vk::ShaderStageFlagBits::eCompute;
-
     vk::DescriptorSetLayoutBinding computeLayoutBindingNumVerts{};
     computeLayoutBindingNumVerts.binding            = 2;
     computeLayoutBindingNumVerts.descriptorCount    = 1;
@@ -1426,10 +1414,6 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
     computeLayoutBindingvertices.descriptorType     = vk::DescriptorType::eStorageBuffer;
     computeLayoutBindingvertices.pImmutableSamplers = nullptr;
     computeLayoutBindingvertices.stageFlags         = vk::ShaderStageFlagBits::eCompute;
-
-    // std::vector<vk::DescriptorSetLayoutBinding> bindings = {
-    //     computeLayoutBindingVertices1,       computeLayoutBindingVertices2, computeLayoutBindingCellVertexArray,
-    //     computeLayoutBindingCellVertexCount, computeLayoutBindingNumVerts,  computeLayoutBindingvertices};
 
     std::vector<vk::DescriptorSetLayoutBinding> bindings = {
         computeLayoutBindingVertices1,       computeLayoutBindingVertices2,
@@ -1597,30 +1581,32 @@ void VulkanInstance::createViewMatrixUBOBuffers()
 
 void VulkanInstance::createElementStatusUBOBuffers()
 {
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(VulkanUtils::ViewMatrixUBO));
+    // uint32_t size = m_elements->m_elements.size() * sizeof(VulkanUtils::ViewMatrixUBO);
+    // vk::DeviceSize bufferSize = static_cast<uint32_t>(size);
 
-    m_elementStatusUBOBuffers.resize(m_swapChainImages.size());
-    m_elementStatusUBOBuffersMemory.resize(m_swapChainImages.size());
+    // m_elementStatusUBOBuffers.resize(m_swapChainImages.size());
+    // m_elementStatusUBOBuffersMemory.resize(m_swapChainImages.size());
 
-    for (size_t i = 0; i < m_swapChainImages.size(); i++)
-    {
-        createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
-                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                     m_elementStatusUBOBuffers[i], m_elementStatusUBOBuffersMemory[i]);
-    }
+    // for (size_t i = 0; i < m_swapChainImages.size(); i++)
+    // {
+    //     createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
+    //                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+    //                  m_elementStatusUBOBuffers[i], m_elementStatusUBOBuffersMemory[i]);
+    // }
 }
 
 void VulkanInstance::createDescriptorPool()
 {
-    std::array<vk::DescriptorPoolSize, 3> descriptorPoolSizes{};
+    std::array<vk::DescriptorPoolSize, 2> descriptorPoolSizes{};
     descriptorPoolSizes[0].type            = vk::DescriptorType::eUniformBuffer;
     descriptorPoolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
 
-    descriptorPoolSizes[1].type            = vk::DescriptorType::eUniformBuffer;
-    descriptorPoolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
     // For the allocation of the combined image sampler
-    descriptorPoolSizes[2].type            = vk::DescriptorType::eCombinedImageSampler;
-    descriptorPoolSizes[2].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+    descriptorPoolSizes[1].type            = vk::DescriptorType::eCombinedImageSampler;
+    descriptorPoolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+
+    // descriptorPoolSizes[2].type            = vk::DescriptorType::eUniformBuffer;
+    // descriptorPoolSizes[2].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
 
     vk::DescriptorPoolCreateInfo poolInfo{};
     poolInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
@@ -1664,11 +1650,6 @@ void VulkanInstance::createDescriptorSets()
         bufferInfo.offset = 0;
         bufferInfo.range  = sizeof(VulkanUtils::ViewMatrixUBO);
 
-        vk::DescriptorBufferInfo elementStatusBufferInfo{};
-        bufferInfo.buffer = m_elementStatusUBOBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range  = m_elements->m_elements.size() * sizeof(VulkanUtils::ElementStatusUBO);
-
         // The resources for a combined image sampler structure must be specified in a vk::DescriptorImageInfo
         // struct
         vk::DescriptorImageInfo imageInfo{};
@@ -1676,7 +1657,12 @@ void VulkanInstance::createDescriptorSets()
         imageInfo.imageView   = m_textureImageView;
         imageInfo.sampler     = m_textureSampler;
 
-        std::array<vk::WriteDescriptorSet, 3> descriptorWrites{};
+        // vk::DescriptorBufferInfo elementStatusBufferInfo{};
+        // bufferInfo.buffer = m_elementStatusUBOBuffers[i];
+        // bufferInfo.offset = 0;
+        // bufferInfo.range  = m_elements->m_elements.size() * sizeof(VulkanUtils::ElementStatusUBO);
+
+        std::array<vk::WriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].dstSet = m_descriptorSets[i];
         // Give our uniform buffer binding index 0
         descriptorWrites[0].dstBinding = 0;
@@ -1687,22 +1673,21 @@ void VulkanInstance::createDescriptorSets()
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo     = &bufferInfo;
 
-        descriptorWrites[1].dstSet = m_descriptorSets[i];
-        // Give our uniform buffer binding index 0
-        descriptorWrites[1].dstBinding = 1;
-        // Specify the first index in the array of descriptors that we want to update.
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType  = vk::DescriptorType::eUniformBuffer;
-        // Specify how many array elements you want to update.
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pBufferInfo     = &bufferInfo;
 
-        descriptorWrites[2].dstSet          = m_descriptorSets[i];
-        descriptorWrites[2].dstBinding      = 2;
-        descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType  = vk::DescriptorType::eCombinedImageSampler;
-        descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pImageInfo      = &imageInfo;
+
+        descriptorWrites[1].dstSet          = m_descriptorSets[i];
+        descriptorWrites[1].dstBinding      = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType  = vk::DescriptorType::eCombinedImageSampler;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo      = &imageInfo;
+
+        // descriptorWrites[2].dstSet = m_descriptorSets[i];
+        // descriptorWrites[2].dstBinding = 2;
+        // descriptorWrites[2].dstArrayElement = 0;
+        // descriptorWrites[2].descriptorType  = vk::DescriptorType::eUniformBuffer;
+        // descriptorWrites[2].descriptorCount = 1;
+        // descriptorWrites[2].pBufferInfo     = &elementStatusBufferInfo;
 
         m_device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                        nullptr);
@@ -1881,8 +1866,8 @@ void VulkanInstance::cleanupSwapChain()
     {
         m_device->destroyBuffer(m_viewMatrixUBOBuffers[i]);
         m_device->freeMemory(m_viewMatrixUBOBuffersMemory[i]);
-        m_device->destroyBuffer(m_elementStatusUBOBuffers[i]);
-        m_device->freeMemory(m_elementStatusUBOBuffersMemory[i]);
+        // m_device->destroyBuffer(m_elementStatusUBOBuffers[i]);
+        // m_device->freeMemory(m_elementStatusUBOBuffersMemory[i]);
     }
 
     m_device->destroySwapchainKHR(m_swapChain);
@@ -1932,21 +1917,21 @@ void VulkanInstance::updateViewMatrixUBO(uint32_t currentImage)
 
 void VulkanInstance::updateElementStatusUBO(uint32_t currentImage)
 {
-    static auto startTime   = std::chrono::high_resolution_clock::now();
-    auto        currentTime = std::chrono::high_resolution_clock::now();
-    float       time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    // static auto startTime   = std::chrono::high_resolution_clock::now();
+    // auto        currentTime = std::chrono::high_resolution_clock::now();
+    // float       time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    std::vector<VulkanUtils::ElementStatusUBO> ubos;
-    for(int i=0; i<m_elements->m_elements.size(); i++) {
-        VulkanUtils::ElementStatusUBO ubo;
-        ubo.scale = glm::scale(Matrix4(1), Vector3(1.f));
-        ubo.is_running = false;
-        ubos.push_back(ubo);
-    }
-    uint32_t size = m_elements->m_elements.size()*sizeof(VulkanUtils::ElementStatusUBO);
-    void* data = m_device->mapMemory(m_elementStatusUBOBuffersMemory[currentImage], 0, size);
-    memcpy(data, ubos.data(), size);
-    m_device->unmapMemory(m_elementStatusUBOBuffersMemory[currentImage]);
+    // std::vector<VulkanUtils::ElementStatusUBO> ubos;
+    // for(int i=0; i<m_elements->m_elements.size(); i++) {
+    //     VulkanUtils::ElementStatusUBO ubo;
+    //     ubo.scale = glm::scale(Matrix4(1), Vector3(1.f));
+    //     ubo.is_running = false;
+    //     ubos.push_back(ubo);
+    // }
+    // uint32_t size = m_elements->m_elements.size()*sizeof(VulkanUtils::ElementStatusUBO);
+    // void* data = m_device->mapMemory(m_elementStatusUBOBuffersMemory[currentImage], 0, size);
+    // memcpy(data, ubos.data(), size);
+    // m_device->unmapMemory(m_elementStatusUBOBuffersMemory[currentImage]);
 }
 
 void VulkanInstance::updateElementBuffer()
