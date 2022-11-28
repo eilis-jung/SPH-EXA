@@ -36,6 +36,9 @@ namespace sphexa
         GLFWwindow* m_window;
         int         m_max_frames_in_flight = 2;
 
+        // Visualization settings
+        std::array<float, 4> m_bgColor = {0.75f, 0.75f, 0.75f, 1.0f};
+
         std::shared_ptr<Elements>    m_elements;
         vk::UniqueInstance           m_instance;
         vk::SurfaceKHR               m_surface;
@@ -76,8 +79,8 @@ namespace sphexa
         int* m_cellVertArray;
         int* m_cellVertCount;
 
-        vk::Buffer       m_sphereVertsBuffer;
-        vk::DeviceMemory m_sphereVertsBufferMemory;
+        vk::Buffer       m_allVertsBuffer;
+        vk::DeviceMemory m_allVertsBufferMemory;
 
         vk::Buffer       m_indexBuffer;
         vk::DeviceMemory m_indexBufferMemory;
@@ -95,14 +98,14 @@ namespace sphexa
         size_t                     m_currentFrame       = 0;
         bool                       m_framebufferResized = false;
 
-        // for compute pipeline
-        vk::PipelineLayout             m_computePipelineLayout;
+        // for multi-step compute pipeline
         vk::Pipeline                   m_computePipelinePhysics;
         vk::Pipeline                   m_computePipelineFillCellVertex;
         vk::Pipeline                   m_computePipelineResetCellVertex;
-        vk::Pipeline                   m_computePipelineSphereVertex;
-        vk::DescriptorSetLayout        m_computeDescriptorSetLayout;
-        vk::DescriptorPool             m_computeDescriptorPool;
+        vk::Pipeline                   m_computePipelineAllVertex;
+        std::vector<vk::PipelineLayout>             m_computePipelineLayouts;
+        std::vector<vk::DescriptorSetLayout>        m_computeDescriptorSetLayouts;
+        std::vector<vk::DescriptorPool>             m_computeDescriptorPools;
         std::vector<vk::DescriptorSet> m_computeDescriptorSet;
 
         bool                                 checkValidationLayerSupport();
@@ -162,7 +165,7 @@ namespace sphexa
         void              createNumVertsBuffer();
         void              createCellVertArrayBuffer();
         void              createCellVertCountBuffer();
-        void              createSphereVertsBuffer();
+        void              createAllVertsBuffer();
         void createComputePipeline(const std::vector<unsigned char>& shaderCode, vk::Pipeline& pipelineIdx);
         void createuniformUboBuffers();
         void createDescriptorPool();

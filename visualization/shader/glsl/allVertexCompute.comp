@@ -3,7 +3,7 @@
 #extension GL_GOOGLE_include_directive :enable
 
 #include "constants.h"
-#define SPHERE_POINTS 180
+#define ALL_POINTS 180
 
 struct Vertex {
     vec4 position;
@@ -25,20 +25,21 @@ layout(set = 0, binding = 4) buffer UniformNumVerts {
 	int num_vertices;   
 };
 
-layout(set = 0, binding = 5) buffer SphereVerts {
-	Vertex sphereVerts[];   
+layout(set = 0, binding = 5) buffer AllVerts {
+	Vertex allVerts[];   
 };
 
-// Compute the sphere vertices position
+// Compute all vertices position
 void main() {
-	const int PARTICLE_COUNT = num_vertices * SPHERE_POINTS;
+	const int PARTICLE_COUNT = num_vertices * ALL_POINTS;
 	uint index = gl_GlobalInvocationID.x;
 	// Don't try to write beyond particle count
     if (index >= PARTICLE_COUNT)
 		return;
 	
-	int vertexId = int(index) / SPHERE_POINTS;
+	int vertexId = int(index) / ALL_POINTS;
 	vec3 deltaPos = verticesB[vertexId].position.xyz - verticesA[vertexId].position.xyz;
-	sphereVerts[index].position.xyz += deltaPos;
-	//sphereVerts[0].position.xyz = verticesB[0].position.xyz;
+	deltaPos = vec3(0.02f, 0.f, 0.f);
+	allVerts[index].position.xyz += deltaPos;
+	//allVerts[0].position.xyz = verticesB[0].position.xyz;
 }

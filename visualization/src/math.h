@@ -19,7 +19,7 @@ namespace sphexa
         Vector4 velocity = Vector4(0.f, 0.f, 0.f, 1.f);
         Vector4 attr1    = Vector4(0.05f, 0.0125f, -1.f, 1.f);
         Vector4 attr2 = Vector4(-1.f, -1.f, 1.f, 1.f);
-        Vector4 color = Vector4(1.f, 1.f, 1.f, 1.f);
+        Vector4 color = Vector4(1.f, 1.f, 1.f, 1.f); // not used
 
         bool operator==(const Vertex& other) const
         {

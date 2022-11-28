@@ -1,7 +1,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #include "elements.h"
-#include "points_generator.hpp"
+#include "elements_generator.hpp"
 
 using namespace sphexa;
 
@@ -16,7 +16,7 @@ void Elements::updateOrbit(float deltaX, float deltaY, float deltaZ)
     float radPhi   = glm::radians(phi);
 
     Matrix4 rotation = glm::rotate(Matrix4(1.0f), radTheta, Vector3(0.0f, 1.0f, 0.0f)) *
-                       glm::rotate(Matrix4(1.0f), radPhi, Vector3(1.0f, 0.0f, 0.0f));
+                       glm::rotate(Matrix4(1.0f), radPhi, Vector3(1.0f, 1.0f, 1.0f));
     Matrix4 finalTransform =
         glm::translate(Matrix4(1.0f), Vector3(0.0f)) * rotation * glm::translate(Matrix4(1.0f), Vector3(0.0f, 1.0f, r));
     m_viewMat = glm::inverse(finalTransform);
@@ -26,11 +26,11 @@ void Elements::updateOrbit(float deltaX, float deltaY, float deltaZ)
 
 void Elements::updateMovement(bool flags[])
 {
-    for(int i=0; i<m_raw_verts.size(); i++) {
+    for(int i=0; i<m_elements.size(); i++) {
         if(flags[i])
-            m_raw_verts[i].position.x += 3.0f;
+            m_elements[i].position.x += 3.0f;
         else
-            m_raw_verts[i].position.x += 0.0f;
+            m_elements[i].position.x += 0.0f;
     }
 }
 
@@ -41,37 +41,36 @@ Matrix4 Elements::getProjectionMatrix(size_t width, size_t height)
     return res;
 }
 
-void Elements::init(int numParticles)
+void Elements::init(int numElements)
 {
-    loadModel(m_sphereObjPath);
+    loadModel(m_modelObjPath);
     int           numVertices = 0;
-    PointsGenerator::createCube(
-        m_raw_verts, 
-        m_raw_indices, 
+    ElementsGenerator::createCube(
+        m_elements, 
+        m_element_indices, 
         numVertices,
-        Vector3(1.f, 1.f, (float)numParticles), 
-        Vector3(2.f, 3.f, 2.f),
-        Vector3(1.f, 0.f, 0.f));
+        Vector3(1.f, 1.f, (float)numElements), 
+        Vector3(2.f, 3.f, 2.f));
 
-    int sphereIdx = 0;
-    for (int i = 0; i < m_raw_verts.size(); i++)
+    int currVertexInd = 0;
+    for (int i = 0; i < m_elements.size(); i++)
     {
-        auto translation = m_raw_verts[i].position;
+        auto translation = m_elements[i].position;
         translation.w    = 0.f;
         for (int j = 0; j < m_verts.size(); j++)
         {
             Vertex v = m_verts[j];
             v.position += translation;
-            m_sphere_verts.push_back(v);
-            m_sphere_indices.push_back(sphereIdx);
-            sphereIdx++;
+            m_all_verts.push_back(v);
+            m_all_indices.push_back(currVertexInd);
+            currVertexInd++;
         }
     }
-    std::cout << "Number of raw_verts: " << m_raw_verts.size() << std::endl;
-    std::cout << "Number of sphereIdx: " << sphereIdx << std::endl;
+    std::cout << "Number of elements: " << m_elements.size() << std::endl;
+    std::cout << "Number of all vertices: " << currVertexInd << std::endl;
 }
 
-void Elements::loadModel(std::string modelPath)
+void Elements::loadModel(std::string modelPath, Vector4 initColor)
 {
     tinyobj::attrib_t                attrib;
     std::vector<tinyobj::shape_t>    shapes;
@@ -98,7 +97,8 @@ void Elements::loadModel(std::string modelPath)
 
             vertex.position   = Vector4(pos, 1.f) * scale;
             vertex.position.w = 1.f;
-            vertex.color      = Vector4(glm::normalize(pos), 1.f);
+            // For now all cubes are rendered white
+            vertex.color      = initColor;
 
             m_verts.push_back(vertex);
             m_indices.push_back(m_indices.size());

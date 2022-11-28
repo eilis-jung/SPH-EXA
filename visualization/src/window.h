@@ -45,7 +45,7 @@ public:
         , m_pGLFWWindow(nullptr)
     {
     }
-    void init(int numParticles)
+    void init(int numElements)
     {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -58,7 +58,7 @@ public:
         glfwSetMouseButtonCallback(m_pGLFWWindow, Window::mouseDownCallback);
         glfwSetCursorPosCallback(m_pGLFWWindow, Window::mouseMoveCallback);
         glfwSetFramebufferSizeCallback(m_pGLFWWindow, Window::framebufferResizeCallback);
-        m_elements = std::make_shared<Elements>(numParticles);
+        m_elements = std::make_shared<Elements>(numElements);
         m_vulkanInstance.init(m_pGLFWWindow, m_elements);
     }
 
