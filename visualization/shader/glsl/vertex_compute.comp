@@ -1,0 +1,39 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_GOOGLE_include_directive :enable
+
+#include "constants.h"
+#include "structures.h"
+
+#define NUM_MODEL_VERTICES 36
+
+// Old elements
+layout(set = 0, binding = 0) buffer ElementsA {
+	Element elementsA[];
+};
+
+layout(set = 0, binding = 1) buffer ElementsB {
+	Element elementsB[];
+};
+
+layout(set = 0, binding = 2) buffer UniformNumElements {
+	int numElements;   
+};
+
+layout(set = 0, binding = 3) buffer Vertices {
+	Vertex vertices[];   
+};
+
+// Compute vertices position
+void main() {
+	const int NUM_TOTAL_VERTICES = numElements * NUM_MODEL_VERTICES;
+	uint index = gl_GlobalInvocationID.x;
+    if (index >= NUM_TOTAL_VERTICES)
+		return;
+	
+	int elementID = int(index) / NUM_MODEL_VERTICES;
+	vec3 deltaPos = elementsB[elementID].position.xyz - elementsA[elementID].position.xyz;
+	vertices[index].position.xyz += deltaPos;
+	// deltaPos = vec3(0.f, elementsA[elementID].attr1.z * 0.00006f, 0.f);
+	// vertices[index].position.z = elementsA[elementID].attr1.z;
+}

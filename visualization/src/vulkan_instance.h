@@ -65,28 +65,27 @@ namespace sphexa
         vk::Image                    m_depthImage;
         vk::DeviceMemory             m_depthImageMemory;
         vk::ImageView                m_depthImageView;
-        vk::Buffer                   m_vertexBuffer1;
-        vk::DeviceMemory             m_vertexBufferMemory1;
-        vk::Buffer                   m_vertexBuffer2;
-        vk::DeviceMemory             m_vertexBufferMemory2;
-        vk::Buffer                   m_numVertsBuffer;
-        vk::DeviceMemory             m_numVertsBufferMemory;
-        vk::Buffer                   m_cellVertArrayBuffer;
-        vk::DeviceMemory             m_cellVertArrayBufferMemory;
-        vk::Buffer                   m_cellVertCountBuffer;
-        vk::DeviceMemory             m_cellVertCountBufferMemory;
+        vk::Buffer                   m_elementBuffer1;
+        vk::DeviceMemory             m_elementBufferMemory1;
+        vk::Buffer                   m_elementBuffer2;
+        vk::DeviceMemory             m_elementBufferMemory2;
+        vk::Buffer                   m_numElementsBuffer;
+        vk::DeviceMemory             m_numElementsBufferMemory;
 
         int* m_cellVertArray;
         int* m_cellVertCount;
 
-        vk::Buffer       m_allVertsBuffer;
-        vk::DeviceMemory m_allVertsBufferMemory;
+        vk::Buffer       m_verticesBuffer;
+        vk::DeviceMemory m_verticesBufferMemory;
 
         vk::Buffer       m_indexBuffer;
         vk::DeviceMemory m_indexBufferMemory;
 
-        std::vector<vk::Buffer>       m_uniformUboBuffers;
-        std::vector<vk::DeviceMemory> m_uniformUboBuffersMemory;
+        std::vector<vk::Buffer>       m_viewMatrixUBOBuffers;
+        std::vector<vk::DeviceMemory> m_viewMatrixUBOBuffersMemory;
+
+        std::vector<vk::Buffer>       m_elementStatusUBOBuffers;
+        std::vector<vk::DeviceMemory> m_elementStatusUBOBuffersMemory;
 
         vk::DescriptorPool                                                m_descriptorPool;
         std::vector<vk::DescriptorSet>                                    m_descriptorSets;
@@ -99,10 +98,8 @@ namespace sphexa
         bool                       m_framebufferResized = false;
 
         // for multi-step compute pipeline
-        vk::Pipeline                   m_computePipelinePhysics;
-        vk::Pipeline                   m_computePipelineFillCellVertex;
-        vk::Pipeline                   m_computePipelineResetCellVertex;
-        vk::Pipeline                   m_computePipelineAllVertex;
+        vk::Pipeline                   m_computePipelineElements;
+        vk::Pipeline                   m_computePipelineVertices;
         std::vector<vk::PipelineLayout>             m_computePipelineLayouts;
         std::vector<vk::DescriptorSetLayout>        m_computeDescriptorSetLayouts;
         std::vector<vk::DescriptorPool>             m_computeDescriptorPools;
@@ -160,21 +157,21 @@ namespace sphexa
         void              createTextureImageView();
         void              createTextureSampler();
         void              copyBuffer(vk::Buffer& srcBuffer, vk::Buffer& dstBuffer, const vk::DeviceSize& size);
-        void              createVertexBuffers();
+        void              createElementBuffers();
         void              createIndexBuffer();
-        void              createNumVertsBuffer();
-        void              createCellVertArrayBuffer();
-        void              createCellVertCountBuffer();
-        void              createAllVertsBuffer();
+        void              createNumElementsBuffer();
+        void              createVerticesBuffer();
         void createComputePipeline(const std::vector<unsigned char>& shaderCode, vk::Pipeline& pipelineIdx);
-        void createuniformUboBuffers();
+        void createViewMatrixUBOBuffers();
+        void createElementStatusUBOBuffers();
         void createDescriptorPool();
         void createDescriptorSets();
         void createCommandBuffers();
         void createSyncObjects();
         void cleanupSwapChain();
         void recreateSwapChain();
-        void updateUniformBuffer(uint32_t currentImage);
-        void updateVertexBuffer();
+        void updateViewMatrixUBO(uint32_t currentImage);
+        void updateElementStatusUBO(uint32_t currentImage);
+        void updateElementBuffer();
     };
 } // namespace sphexa

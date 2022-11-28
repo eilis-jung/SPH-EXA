@@ -32,11 +32,10 @@ public:
 #pragma endregion RenderingData
 
 #pragma region PositionData
-    std::vector<Vertex>   m_verts;
-    std::vector<uint32_t> m_indices;
-    std::vector<Vertex>   m_elements;
+    std::vector<Vertex>   m_model_vertices;
+    std::vector<Element>   m_elements;
     std::vector<uint32_t> m_element_indices;
-    std::vector<Vertex>   m_all_verts;
+    std::vector<Vertex>   m_vertices;
     std::vector<uint32_t> m_all_indices;
 #pragma endregion PositionData
 

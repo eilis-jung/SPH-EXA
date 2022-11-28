@@ -49,11 +49,17 @@ namespace sphexa
             std::vector<vk::PresentModeKHR>   presentModes;
         };
 
-        struct UniformBufferObject
+        struct ViewMatrixUBO
         {
             alignas(16) glm::mat4 model;
             alignas(16) glm::mat4 view;
             alignas(16) glm::mat4 proj;
+        };
+
+        struct ElementStatusUBO
+        {
+            alignas(16) glm::mat4 scale;
+            alignas(16) bool is_running;
         };
 
         vk::VertexInputBindingDescription getBindingDescription();

@@ -2,10 +2,9 @@
 
 using namespace sphexa;
 
-void ElementsGenerator::createCube(std::vector<Vertex>& elements, std::vector<uint32_t>& elementIndices, int& numElements,
-                                 const Vector3& numElementPerSide, const Vector3& offset, const Vector3 color)
+void ElementsGenerator::createCube(std::vector<Element>& elements, std::vector<uint32_t>& elementIndices, int& numElements,
+                                 const Vector3& numElementPerSide, const Vector3& offset)
 {
-    // Color is not used in elements
     Vector3 lengths = numElementPerSide;
 
     int currElementIndex = numElements;
@@ -19,9 +18,8 @@ void ElementsGenerator::createCube(std::vector<Vertex>& elements, std::vector<ui
                 position = Vector3(k * lengths.z / (float)numElementPerSide.z, j * lengths.y / (float)numElementPerSide.y, i * lengths.x / (float)numElementPerSide.x);
                 position += offset;
 
-                Vertex element;
+                Element element;
                 element.position = Vector4(position, 1.f);
-                element.color    = Vector4(color, 1.f);
                 elements.push_back(element);
                 elementIndices.push_back(currElementIndex);
                 currElementIndex++;
@@ -32,8 +30,8 @@ void ElementsGenerator::createCube(std::vector<Vertex>& elements, std::vector<ui
     numElements = currElementIndex;
 }
 
-void ElementsGenerator::createSphere(std::vector<Vertex>& elements, std::vector<uint32_t>& elementIndices, int& numElements,
-                                   const int numElementPerSide, const Vector3& offset, const Vector3& color,
+void ElementsGenerator::createSphere(std::vector<Element>& elements, std::vector<uint32_t>& elementIndices, int& numElements,
+                                   const int numElementPerSide, const Vector3& offset,
                                    const Vector3& InitialVel)
 {
     float       length   = float(numElementPerSide) / 10.f;
@@ -58,9 +56,8 @@ void ElementsGenerator::createSphere(std::vector<Vertex>& elements, std::vector<
                 Vector3 diff = position - center;
                 if (diff.x * diff.x + diff.z * diff.z > r2) continue;
 
-                Vertex v;
+                Element v;
                 v.position = Vector4(position, 1.f);
-                v.color    = Vector4(color, 1.f);
                 v.velocity = Vector4(InitialVel, 1.f);
                 elements.push_back(v);
                 elementIndices.push_back(idx);

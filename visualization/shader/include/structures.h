@@ -1,14 +1,15 @@
-struct VulkanMeshInstance
-{
-    highp float enable_vertex_blending;
-    highp float _padding_enable_vertex_blending_1;
-    highp float _padding_enable_vertex_blending_2;
-    highp float _padding_enable_vertex_blending_3;
-    highp mat4  model_matrix;
+struct Vertex {
+    vec4 position;
+	vec4 velocity;
+	mat4 scale;
+	vec4 attr1;  // radius, mass
+	vec4 attr2;
+	vec4 color;
 };
 
-struct VulkanMeshVertexJointBinding
-{
-    highp ivec4 indices;
-    highp vec4  weights;
+struct Element {
+    vec4 position;
+	vec4 velocity;
+	mat4 scale;
+	vec4 attr1;  // radius, mass, is_running
 };

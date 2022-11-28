@@ -23,13 +23,14 @@ void VulkanInstance::init(GLFWwindow* pWindow, std::shared_ptr<Elements> pElemen
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
-    createVertexBuffers();
+    createElementBuffers();
     createIndexBuffer();
-    createNumVertsBuffer();
-    createAllVertsBuffer();
-    createComputePipeline(PHYSICSCOMPUTE_COMP, m_computePipelinePhysics);
-    createComputePipeline(ALLVERTEXCOMPUTE_COMP, m_computePipelineAllVertex);
-    createuniformUboBuffers();
+    createNumElementsBuffer();
+    createVerticesBuffer();
+    createComputePipeline(ELEMENT_COMPUTE_COMP, m_computePipelineElements);
+    createComputePipeline(VERTEX_COMPUTE_COMP, m_computePipelineVertices);
+    createViewMatrixUBOBuffers();
+    createElementStatusUBOBuffers();
     // Descriptor sets can't be created directly, they must be allocated from a pool like command buffers.
     // Allocate one of these descriptors for every frame.
     createDescriptorPool();
@@ -40,10 +41,8 @@ void VulkanInstance::init(GLFWwindow* pWindow, std::shared_ptr<Elements> pElemen
 void VulkanInstance::cleanup()
 {
     cleanupSwapChain();
-    m_device->destroyPipeline(m_computePipelinePhysics);
-    m_device->destroyPipeline(m_computePipelineFillCellVertex);
-    m_device->destroyPipeline(m_computePipelineResetCellVertex);
-    m_device->destroyPipeline(m_computePipelineAllVertex);
+    m_device->destroyPipeline(m_computePipelineElements);
+    m_device->destroyPipeline(m_computePipelineVertices);
     for (auto& i : m_computePipelineLayouts)
     {
         m_device->destroyPipelineLayout(i);
@@ -63,25 +62,21 @@ void VulkanInstance::cleanup()
     m_device->destroyDescriptorSetLayout(m_descriptorSetLayout);
     m_device->destroyDescriptorPool(m_descriptorPool);
 
-    // for(auto & i: m_descriptorSets) {
-    //     m_device->destroyDescriptorSet(i);
-    // }
-
     // The main texture image is used until the end of the program:
     m_device->destroySampler(m_textureSampler);
     m_device->destroyImageView(m_textureImageView);
     m_device->destroyImage(m_textureImage);
     m_device->freeMemory(m_textureImageMemory);
-    m_device->destroyBuffer(m_numVertsBuffer);
-    m_device->freeMemory(m_numVertsBufferMemory);
-    m_device->destroyBuffer(m_vertexBuffer1);
-    m_device->freeMemory(m_vertexBufferMemory1);
-    m_device->destroyBuffer(m_vertexBuffer2);
-    m_device->freeMemory(m_vertexBufferMemory2);
+    m_device->destroyBuffer(m_numElementsBuffer);
+    m_device->freeMemory(m_numElementsBufferMemory);
+    m_device->destroyBuffer(m_elementBuffer1);
+    m_device->freeMemory(m_elementBufferMemory1);
+    m_device->destroyBuffer(m_elementBuffer2);
+    m_device->freeMemory(m_elementBufferMemory2);
     m_device->destroyBuffer(m_indexBuffer);
     m_device->freeMemory(m_indexBufferMemory);
-    m_device->destroyBuffer(m_allVertsBuffer);
-    m_device->freeMemory(m_allVertsBufferMemory);
+    m_device->destroyBuffer(m_verticesBuffer);
+    m_device->freeMemory(m_verticesBufferMemory);
 
     for (size_t i = 0; i < m_max_frames_in_flight; i++)
     {
@@ -117,9 +112,10 @@ void VulkanInstance::drawFrame()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Vertex));
-    copyBuffer(m_vertexBuffer2, m_vertexBuffer1, bufferSize);
-    updateUniformBuffer(imageIndex);
+    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
+    copyBuffer(m_elementBuffer2, m_elementBuffer1, bufferSize);
+    updateViewMatrixUBO(imageIndex);
+    updateElementStatusUBO(imageIndex);
     vk::SubmitInfo submitInfo = {};
 
     vk::Semaphore          waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
@@ -201,10 +197,12 @@ void VulkanInstance::drawFrameWithUpdatedVertices()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Vertex));
-    copyBuffer(m_vertexBuffer2, m_vertexBuffer1, bufferSize);
-    updateUniformBuffer(imageIndex);
-    updateVertexBuffer();
+    
+    updateViewMatrixUBO(imageIndex);
+    updateElementStatusUBO(imageIndex);
+    // updateElementBuffer();
+    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
+    copyBuffer(m_elementBuffer2, m_elementBuffer1, bufferSize);
     vk::SubmitInfo submitInfo = {};
 
     vk::Semaphore          waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
@@ -725,25 +723,31 @@ void VulkanInstance::createRenderPass()
 
 void VulkanInstance::createDescriptorSetLayout()
 {
-    vk::DescriptorSetLayoutBinding uboLayoutBinding{};
+    vk::DescriptorSetLayoutBinding viewMatrixLayoutBinding{};
     // Specify the binding used in the shader
-    uboLayoutBinding.binding = 0;
+    viewMatrixLayoutBinding.binding = 0;
     // Specify the type of descriptor, which is a uniform buffer object
-    uboLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+    viewMatrixLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
     // Our MVP transformation is in a single uniform buffer object
-    uboLayoutBinding.descriptorCount    = 1;
-    uboLayoutBinding.stageFlags         = vk::ShaderStageFlagBits::eVertex;
-    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional, used for image sampling related descriptors
+    viewMatrixLayoutBinding.descriptorCount    = 1;
+    viewMatrixLayoutBinding.stageFlags         = vk::ShaderStageFlagBits::eVertex;
+    viewMatrixLayoutBinding.pImmutableSamplers = nullptr; // Optional, used for image sampling related descriptors
+
+    vk::DescriptorSetLayoutBinding elementStatusLayoutBinding{};
+    elementStatusLayoutBinding.binding = 1;
+    elementStatusLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+    elementStatusLayoutBinding.descriptorCount    = 1;
+    elementStatusLayoutBinding.stageFlags         = vk::ShaderStageFlagBits::eVertex;
+    elementStatusLayoutBinding.pImmutableSamplers = nullptr;
 
     vk::DescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding            = 1;
+    samplerLayoutBinding.binding            = 2;
     samplerLayoutBinding.descriptorCount    = 1;
     samplerLayoutBinding.descriptorType     = vk::DescriptorType::eCombinedImageSampler;
     samplerLayoutBinding.pImmutableSamplers = nullptr;
-    // Indicate that we intend to use the combined image sampler descriptor in the fragment shader.
     samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    std::array<vk::DescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+    std::vector<vk::DescriptorSetLayoutBinding> bindings = {viewMatrixLayoutBinding, elementStatusLayoutBinding, samplerLayoutBinding};
     vk::DescriptorSetLayoutCreateInfo             descriptorLayoutInfo{};
     descriptorLayoutInfo.flags        = vk::DescriptorSetLayoutCreateFlags();
     descriptorLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -1006,7 +1010,6 @@ void VulkanInstance::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usag
     vk::BufferCreateInfo bufferInfo = {};
     bufferInfo.size                 = size;
     bufferInfo.usage                = usage;
-    // bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
     try
     {
@@ -1257,9 +1260,9 @@ void VulkanInstance::copyBuffer(vk::Buffer& srcBuffer, vk::Buffer& dstBuffer, co
     endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanInstance::createVertexBuffers()
+void VulkanInstance::createElementBuffers()
 {
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Vertex));
+    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
 
     vk::Buffer       stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -1271,24 +1274,24 @@ void VulkanInstance::createVertexBuffers()
     memcpy(data, m_elements->m_elements.data(), (size_t)bufferSize);
     m_device->unmapMemory(stagingBufferMemory);
 
-    // Create buffer for the old vertices
+    // Create buffer for the old elements
     createBuffer(bufferSize,
                  vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
                      vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent |
                      vk::MemoryPropertyFlagBits::eDeviceLocal,
-                 m_vertexBuffer1, m_vertexBufferMemory1);
+                 m_elementBuffer1, m_elementBufferMemory1);
 
-    // Create buffer for the new vertices
+    // Create buffer for the new elements
     createBuffer(bufferSize,
                  vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
                      vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent |
                      vk::MemoryPropertyFlagBits::eDeviceLocal,
-                 m_vertexBuffer2, m_vertexBufferMemory2);
+                 m_elementBuffer2, m_elementBufferMemory2);
 
-    copyBuffer(stagingBuffer, m_vertexBuffer1, bufferSize);
-    copyBuffer(stagingBuffer, m_vertexBuffer2, bufferSize);
+    copyBuffer(stagingBuffer, m_elementBuffer1, bufferSize);
+    copyBuffer(stagingBuffer, m_elementBuffer2, bufferSize);
 
     m_device->destroyBuffer(stagingBuffer);
     m_device->freeMemory(stagingBufferMemory);
@@ -1318,7 +1321,7 @@ void VulkanInstance::createIndexBuffer()
     m_device->freeMemory(stagingBufferMemory);
 }
 
-void VulkanInstance::createNumVertsBuffer()
+void VulkanInstance::createNumElementsBuffer()
 {
     vk::DeviceSize bufferSize = static_cast<uint32_t>(sizeof(int));
 
@@ -1328,9 +1331,9 @@ void VulkanInstance::createNumVertsBuffer()
                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer,
                  stagingBufferMemory);
 
-    const int NUM_VERTS = m_elements->m_elements.size();
+    const int numElements = m_elements->m_elements.size();
     void*     data      = m_device->mapMemory(stagingBufferMemory, 0, bufferSize);
-    memcpy(data, &NUM_VERTS, (size_t)bufferSize);
+    memcpy(data, &numElements, (size_t)bufferSize);
     m_device->unmapMemory(stagingBufferMemory);
 
     // Create buffer for the old vertices
@@ -1339,17 +1342,17 @@ void VulkanInstance::createNumVertsBuffer()
                      vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent |
                      vk::MemoryPropertyFlagBits::eDeviceLocal,
-                 m_numVertsBuffer, m_numVertsBufferMemory);
+                 m_numElementsBuffer, m_numElementsBufferMemory);
 
-    copyBuffer(stagingBuffer, m_numVertsBuffer, bufferSize);
+    copyBuffer(stagingBuffer, m_numElementsBuffer, bufferSize);
 
     m_device->destroyBuffer(stagingBuffer);
     m_device->freeMemory(stagingBufferMemory);
 }
 
-void VulkanInstance::createAllVertsBuffer()
+void VulkanInstance::createVerticesBuffer()
 {
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(sizeof(Vertex) * m_elements->m_all_verts.size());
+    vk::DeviceSize bufferSize = static_cast<uint32_t>(sizeof(Vertex) * m_elements->m_vertices.size());
 
     vk::Buffer       stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -1358,15 +1361,15 @@ void VulkanInstance::createAllVertsBuffer()
                  stagingBufferMemory);
 
     void* data = m_device->mapMemory(stagingBufferMemory, 0, bufferSize);
-    memcpy(data, m_elements->m_all_verts.data(), (size_t)bufferSize);
+    memcpy(data, m_elements->m_vertices.data(), (size_t)bufferSize);
     m_device->unmapMemory(stagingBufferMemory);
 
     createBuffer(bufferSize,
                  vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
                      vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
-                 vk::MemoryPropertyFlagBits::eDeviceLocal, m_allVertsBuffer, m_allVertsBufferMemory);
+                 vk::MemoryPropertyFlagBits::eDeviceLocal, m_verticesBuffer, m_verticesBufferMemory);
 
-    copyBuffer(stagingBuffer, m_allVertsBuffer, bufferSize);
+    copyBuffer(stagingBuffer, m_verticesBuffer, bufferSize);
 
     m_device->destroyBuffer(stagingBuffer);
     m_device->freeMemory(stagingBufferMemory);
@@ -1396,37 +1399,41 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
     computeLayoutBindingVertices2.pImmutableSamplers = nullptr;
     computeLayoutBindingVertices2.stageFlags         = vk::ShaderStageFlagBits::eCompute;
 
-    vk::DescriptorSetLayoutBinding computeLayoutBindingCellVertexArray{};
-    computeLayoutBindingCellVertexArray.binding            = 2;
-    computeLayoutBindingCellVertexArray.descriptorCount    = 1;
-    computeLayoutBindingCellVertexArray.descriptorType     = vk::DescriptorType::eStorageBuffer;
-    computeLayoutBindingCellVertexArray.pImmutableSamplers = nullptr;
-    computeLayoutBindingCellVertexArray.stageFlags         = vk::ShaderStageFlagBits::eCompute;
+    // vk::DescriptorSetLayoutBinding computeLayoutBindingCellVertexArray{};
+    // computeLayoutBindingCellVertexArray.binding            = 2;
+    // computeLayoutBindingCellVertexArray.descriptorCount    = 1;
+    // computeLayoutBindingCellVertexArray.descriptorType     = vk::DescriptorType::eStorageBuffer;
+    // computeLayoutBindingCellVertexArray.pImmutableSamplers = nullptr;
+    // computeLayoutBindingCellVertexArray.stageFlags         = vk::ShaderStageFlagBits::eCompute;
 
-    vk::DescriptorSetLayoutBinding computeLayoutBindingCellVertexCount{};
-    computeLayoutBindingCellVertexCount.binding            = 3;
-    computeLayoutBindingCellVertexCount.descriptorCount    = 1;
-    computeLayoutBindingCellVertexCount.descriptorType     = vk::DescriptorType::eStorageBuffer;
-    computeLayoutBindingCellVertexCount.pImmutableSamplers = nullptr;
-    computeLayoutBindingCellVertexCount.stageFlags         = vk::ShaderStageFlagBits::eCompute;
+    // vk::DescriptorSetLayoutBinding computeLayoutBindingCellVertexCount{};
+    // computeLayoutBindingCellVertexCount.binding            = 3;
+    // computeLayoutBindingCellVertexCount.descriptorCount    = 1;
+    // computeLayoutBindingCellVertexCount.descriptorType     = vk::DescriptorType::eStorageBuffer;
+    // computeLayoutBindingCellVertexCount.pImmutableSamplers = nullptr;
+    // computeLayoutBindingCellVertexCount.stageFlags         = vk::ShaderStageFlagBits::eCompute;
 
     vk::DescriptorSetLayoutBinding computeLayoutBindingNumVerts{};
-    computeLayoutBindingNumVerts.binding            = 4;
+    computeLayoutBindingNumVerts.binding            = 2;
     computeLayoutBindingNumVerts.descriptorCount    = 1;
     computeLayoutBindingNumVerts.descriptorType     = vk::DescriptorType::eStorageBuffer;
     computeLayoutBindingNumVerts.pImmutableSamplers = nullptr;
     computeLayoutBindingNumVerts.stageFlags         = vk::ShaderStageFlagBits::eCompute;
 
-    vk::DescriptorSetLayoutBinding computeLayoutBindingAllVerts{};
-    computeLayoutBindingAllVerts.binding            = 5;
-    computeLayoutBindingAllVerts.descriptorCount    = 1;
-    computeLayoutBindingAllVerts.descriptorType     = vk::DescriptorType::eStorageBuffer;
-    computeLayoutBindingAllVerts.pImmutableSamplers = nullptr;
-    computeLayoutBindingAllVerts.stageFlags         = vk::ShaderStageFlagBits::eCompute;
+    vk::DescriptorSetLayoutBinding computeLayoutBindingvertices{};
+    computeLayoutBindingvertices.binding            = 3;
+    computeLayoutBindingvertices.descriptorCount    = 1;
+    computeLayoutBindingvertices.descriptorType     = vk::DescriptorType::eStorageBuffer;
+    computeLayoutBindingvertices.pImmutableSamplers = nullptr;
+    computeLayoutBindingvertices.stageFlags         = vk::ShaderStageFlagBits::eCompute;
+
+    // std::vector<vk::DescriptorSetLayoutBinding> bindings = {
+    //     computeLayoutBindingVertices1,       computeLayoutBindingVertices2, computeLayoutBindingCellVertexArray,
+    //     computeLayoutBindingCellVertexCount, computeLayoutBindingNumVerts,  computeLayoutBindingvertices};
 
     std::vector<vk::DescriptorSetLayoutBinding> bindings = {
-        computeLayoutBindingVertices1,       computeLayoutBindingVertices2, computeLayoutBindingCellVertexArray,
-        computeLayoutBindingCellVertexCount, computeLayoutBindingNumVerts,  computeLayoutBindingAllVerts};
+        computeLayoutBindingVertices1,       computeLayoutBindingVertices2,
+        computeLayoutBindingNumVerts,  computeLayoutBindingvertices};
 
     vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
     descriptorSetLayoutCreateInfo.flags                             = vk::DescriptorSetLayoutCreateFlags();
@@ -1479,11 +1486,11 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
         throw std::runtime_error("failed to create compute descriptor sets!");
     }
 
-    // Set descriptor set for the old vertices
+    // Set descriptor set for the old elements
     vk::DescriptorBufferInfo computeBufferInfoVertices1 = {};
-    computeBufferInfoVertices1.buffer                   = m_vertexBuffer1;
+    computeBufferInfoVertices1.buffer                   = m_elementBuffer1;
     computeBufferInfoVertices1.offset                   = 0;
-    computeBufferInfoVertices1.range = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Vertex));
+    computeBufferInfoVertices1.range = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
 
     vk::WriteDescriptorSet writeComputeInfoVertices1 = {};
     writeComputeInfoVertices1.dstSet                 = m_computeDescriptorSet[0];
@@ -1493,11 +1500,11 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
     writeComputeInfoVertices1.descriptorType         = vk::DescriptorType::eStorageBuffer;
     writeComputeInfoVertices1.pBufferInfo            = &computeBufferInfoVertices1;
 
-    // Set descriptor set for the new vertices
+    // Set descriptor set for the new elements
     vk::DescriptorBufferInfo computeBufferInfoVertices2 = {};
-    computeBufferInfoVertices2.buffer                   = m_vertexBuffer2;
+    computeBufferInfoVertices2.buffer                   = m_elementBuffer2;
     computeBufferInfoVertices2.offset                   = 0;
-    computeBufferInfoVertices2.range = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Vertex));
+    computeBufferInfoVertices2.range = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
 
     vk::WriteDescriptorSet writeComputeInfoVertices2 = {};
     writeComputeInfoVertices2.dstSet                 = m_computeDescriptorSet[0];
@@ -1509,34 +1516,34 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
 
     // Set descriptor set for the buffer representing the number of vertices
     vk::DescriptorBufferInfo computeBufferInfoNumVerts = {};
-    computeBufferInfoNumVerts.buffer                   = m_numVertsBuffer;
+    computeBufferInfoNumVerts.buffer                   = m_numElementsBuffer;
     computeBufferInfoNumVerts.offset                   = 0;
     computeBufferInfoNumVerts.range                    = static_cast<uint32_t>(sizeof(int));
 
     vk::WriteDescriptorSet writeComputeInfoNumVerts = {};
     writeComputeInfoNumVerts.dstSet                 = m_computeDescriptorSet[0];
-    writeComputeInfoNumVerts.dstBinding             = 4;
+    writeComputeInfoNumVerts.dstBinding             = 2;
     writeComputeInfoNumVerts.descriptorCount        = 1;
     writeComputeInfoNumVerts.dstArrayElement        = 0;
     writeComputeInfoNumVerts.descriptorType         = vk::DescriptorType::eStorageBuffer;
     writeComputeInfoNumVerts.pBufferInfo            = &computeBufferInfoNumVerts;
 
     // Set descriptor set for the buffer representing all vertices
-    vk::DescriptorBufferInfo computeBufferInfoAllVerts = {};
-    computeBufferInfoAllVerts.buffer                   = m_allVertsBuffer;
-    computeBufferInfoAllVerts.offset                   = 0;
-    computeBufferInfoAllVerts.range = static_cast<uint32_t>(sizeof(Vertex) * m_elements->m_all_verts.size());
+    vk::DescriptorBufferInfo computeBufferInfovertices = {};
+    computeBufferInfovertices.buffer                   = m_verticesBuffer;
+    computeBufferInfovertices.offset                   = 0;
+    computeBufferInfovertices.range = static_cast<uint32_t>(sizeof(Vertex) * m_elements->m_vertices.size());
 
-    vk::WriteDescriptorSet writeComputeInfoAllVerts = {};
-    writeComputeInfoAllVerts.dstSet                 = m_computeDescriptorSet[0];
-    writeComputeInfoAllVerts.dstBinding             = 5;
-    writeComputeInfoAllVerts.descriptorCount        = 1;
-    writeComputeInfoAllVerts.dstArrayElement        = 0;
-    writeComputeInfoAllVerts.descriptorType         = vk::DescriptorType::eStorageBuffer;
-    writeComputeInfoAllVerts.pBufferInfo            = &computeBufferInfoAllVerts;
+    vk::WriteDescriptorSet writeComputeInfovertices = {};
+    writeComputeInfovertices.dstSet                 = m_computeDescriptorSet[0];
+    writeComputeInfovertices.dstBinding             = 3;
+    writeComputeInfovertices.descriptorCount        = 1;
+    writeComputeInfovertices.dstArrayElement        = 0;
+    writeComputeInfovertices.descriptorType         = vk::DescriptorType::eStorageBuffer;
+    writeComputeInfovertices.pBufferInfo            = &computeBufferInfovertices;
 
     std::array<vk::WriteDescriptorSet, 4> writeDescriptorSets = {writeComputeInfoVertices1, writeComputeInfoVertices2,
-                                                                 writeComputeInfoNumVerts, writeComputeInfoAllVerts};
+                                                                 writeComputeInfoNumVerts, writeComputeInfovertices};
     m_device->updateDescriptorSets(static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0,
                                    nullptr);
     std::array<vk::DescriptorSetLayout, 1> descriptorSetLayouts = {m_computeDescriptorSetLayouts.back()};
@@ -1573,29 +1580,47 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
     }
 }
 
-void VulkanInstance::createuniformUboBuffers()
+void VulkanInstance::createViewMatrixUBOBuffers()
 {
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(sizeof(VulkanUtils::UniformBufferObject));
+    vk::DeviceSize bufferSize = static_cast<uint32_t>(sizeof(VulkanUtils::ViewMatrixUBO));
 
-    m_uniformUboBuffers.resize(m_swapChainImages.size());
-    m_uniformUboBuffersMemory.resize(m_swapChainImages.size());
+    m_viewMatrixUBOBuffers.resize(m_swapChainImages.size());
+    m_viewMatrixUBOBuffersMemory.resize(m_swapChainImages.size());
 
     for (size_t i = 0; i < m_swapChainImages.size(); i++)
     {
         createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                     m_uniformUboBuffers[i], m_uniformUboBuffersMemory[i]);
+                     m_viewMatrixUBOBuffers[i], m_viewMatrixUBOBuffersMemory[i]);
+    }
+}
+
+void VulkanInstance::createElementStatusUBOBuffers()
+{
+    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(VulkanUtils::ViewMatrixUBO));
+
+    m_elementStatusUBOBuffers.resize(m_swapChainImages.size());
+    m_elementStatusUBOBuffersMemory.resize(m_swapChainImages.size());
+
+    for (size_t i = 0; i < m_swapChainImages.size(); i++)
+    {
+        createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
+                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                     m_elementStatusUBOBuffers[i], m_elementStatusUBOBuffersMemory[i]);
     }
 }
 
 void VulkanInstance::createDescriptorPool()
 {
-    std::array<vk::DescriptorPoolSize, 2> descriptorPoolSizes{};
+    std::array<vk::DescriptorPoolSize, 3> descriptorPoolSizes{};
     descriptorPoolSizes[0].type            = vk::DescriptorType::eUniformBuffer;
     descriptorPoolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
-    // For the allocation of the combined image sampler
-    descriptorPoolSizes[1].type            = vk::DescriptorType::eCombinedImageSampler;
+
+    descriptorPoolSizes[1].type            = vk::DescriptorType::eUniformBuffer;
     descriptorPoolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+    // For the allocation of the combined image sampler
+    descriptorPoolSizes[2].type            = vk::DescriptorType::eCombinedImageSampler;
+    descriptorPoolSizes[2].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
 
     vk::DescriptorPoolCreateInfo poolInfo{};
     poolInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
@@ -1635,9 +1660,14 @@ void VulkanInstance::createDescriptorSets()
     for (size_t i = 0; i < m_swapChainImages.size(); i++)
     {
         vk::DescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = m_uniformUboBuffers[i];
+        bufferInfo.buffer = m_viewMatrixUBOBuffers[i];
         bufferInfo.offset = 0;
-        bufferInfo.range  = sizeof(VulkanUtils::UniformBufferObject);
+        bufferInfo.range  = sizeof(VulkanUtils::ViewMatrixUBO);
+
+        vk::DescriptorBufferInfo elementStatusBufferInfo{};
+        bufferInfo.buffer = m_elementStatusUBOBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range  = m_elements->m_elements.size() * sizeof(VulkanUtils::ElementStatusUBO);
 
         // The resources for a combined image sampler structure must be specified in a vk::DescriptorImageInfo
         // struct
@@ -1646,7 +1676,7 @@ void VulkanInstance::createDescriptorSets()
         imageInfo.imageView   = m_textureImageView;
         imageInfo.sampler     = m_textureSampler;
 
-        std::array<vk::WriteDescriptorSet, 2> descriptorWrites{};
+        std::array<vk::WriteDescriptorSet, 3> descriptorWrites{};
         descriptorWrites[0].dstSet = m_descriptorSets[i];
         // Give our uniform buffer binding index 0
         descriptorWrites[0].dstBinding = 0;
@@ -1657,12 +1687,22 @@ void VulkanInstance::createDescriptorSets()
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo     = &bufferInfo;
 
-        descriptorWrites[1].dstSet          = m_descriptorSets[i];
-        descriptorWrites[1].dstBinding      = 1;
+        descriptorWrites[1].dstSet = m_descriptorSets[i];
+        // Give our uniform buffer binding index 0
+        descriptorWrites[1].dstBinding = 1;
+        // Specify the first index in the array of descriptors that we want to update.
         descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType  = vk::DescriptorType::eCombinedImageSampler;
+        descriptorWrites[1].descriptorType  = vk::DescriptorType::eUniformBuffer;
+        // Specify how many array elements you want to update.
         descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo      = &imageInfo;
+        descriptorWrites[1].pBufferInfo     = &bufferInfo;
+
+        descriptorWrites[2].dstSet          = m_descriptorSets[i];
+        descriptorWrites[2].dstBinding      = 2;
+        descriptorWrites[2].dstArrayElement = 0;
+        descriptorWrites[2].descriptorType  = vk::DescriptorType::eCombinedImageSampler;
+        descriptorWrites[2].descriptorCount = 1;
+        descriptorWrites[2].pImageInfo      = &imageInfo;
 
         m_device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                        nullptr);
@@ -1719,7 +1759,7 @@ void VulkanInstance::createCommandBuffers()
 // First compute pipeline: physics
 // ==============================
 #pragma region PhysicsPipeline
-        m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eCompute, m_computePipelinePhysics);
+        m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eCompute, m_computePipelineElements);
         m_commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_computePipelineLayouts.data()[0], 0,
                                                1, m_computeDescriptorSet.data(), 0, nullptr);
         m_commandBuffers[i].dispatch(uint32_t(m_elements->m_elements.size()), 1, 1);
@@ -1729,9 +1769,9 @@ void VulkanInstance::createCommandBuffers()
         computeToComputeBarrier2.dstAccessMask = vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead;
         computeToComputeBarrier2.srcQueueFamilyIndex = queueFamilyIndices.computeFamily.value();
         computeToComputeBarrier2.dstQueueFamilyIndex = queueFamilyIndices.computeFamily.value();
-        computeToComputeBarrier2.buffer              = m_vertexBuffer2;
+        computeToComputeBarrier2.buffer              = m_elementBuffer2;
         computeToComputeBarrier2.offset              = 0;
-        computeToComputeBarrier2.size = uint32_t(m_elements->m_elements.size()) * sizeof(Vertex); // vertexBufferSize
+        computeToComputeBarrier2.size = uint32_t(m_elements->m_elements.size()) * sizeof(Element); // vertexBufferSize
 #pragma endregion PhysicsPipeline
 
         vk::PipelineStageFlags computeShaderStageFlags_5(vk::PipelineStageFlagBits::eComputeShader);
@@ -1742,15 +1782,15 @@ void VulkanInstance::createCommandBuffers()
 // ==============================
 // Second compute pipeline: All vertex
 // ==============================
-#pragma region AllVertexPipeline
-        m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eCompute, m_computePipelineAllVertex);
+#pragma region verticesPipeline
+        m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eCompute, m_computePipelineVertices);
 
         // Bind descriptor sets for compute
         m_commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_computePipelineLayouts.data()[1], 0,
                                                1, m_computeDescriptorSet.data(), 0, nullptr);
 
         // Dispatch compute kernel, one thread for each vertex
-        m_commandBuffers[i].dispatch(uint32_t(m_elements->m_all_verts.size()), 1, 1);
+        m_commandBuffers[i].dispatch(uint32_t(m_elements->m_vertices.size()), 1, 1);
 
         // Define a memory barrier to transition the vertex buffer from a compute storage object to a vertex
         // input
@@ -1759,15 +1799,15 @@ void VulkanInstance::createCommandBuffers()
         computeToVertexBarrier.dstAccessMask       = vk::AccessFlagBits::eVertexAttributeRead;
         computeToVertexBarrier.srcQueueFamilyIndex = queueFamilyIndices.computeFamily.value();
         computeToVertexBarrier.dstQueueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-        computeToVertexBarrier.buffer              = m_allVertsBuffer;
+        computeToVertexBarrier.buffer              = m_verticesBuffer;
         computeToVertexBarrier.offset              = 0;
-        computeToVertexBarrier.size = uint32_t(m_elements->m_all_verts.size()) * sizeof(Vertex); // vertexBufferSize
+        computeToVertexBarrier.size = uint32_t(m_elements->m_vertices.size()) * sizeof(Vertex); // vertexBufferSize
 
         vk::PipelineStageFlags computeShaderStageFlags(vk::PipelineStageFlagBits::eComputeShader);
         vk::PipelineStageFlags vertexShaderStageFlags(vk::PipelineStageFlagBits::eVertexInput);
         m_commandBuffers[i].pipelineBarrier(computeShaderStageFlags, vertexShaderStageFlags, vk::DependencyFlags(), 0,
                                             nullptr, 1, &computeToVertexBarrier, 0, nullptr);
-#pragma endregion AllVertexPipeline
+#pragma endregion verticesPipeline
 
 // ==============================
 // Third pipeline: Graphics
@@ -1776,7 +1816,7 @@ void VulkanInstance::createCommandBuffers()
         m_commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
         m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline);
 
-        vk::Buffer     vertexBuffers[] = {m_allVertsBuffer};
+        vk::Buffer     vertexBuffers[] = {m_verticesBuffer};
         vk::DeviceSize offsets[]       = {0};
         m_commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers, offsets);
         m_commandBuffers[i].bindIndexBuffer(m_indexBuffer, 0, vk::IndexType::eUint32);
@@ -1839,8 +1879,10 @@ void VulkanInstance::cleanupSwapChain()
 
     for (size_t i = 0; i < m_swapChainImages.size(); i++)
     {
-        m_device->destroyBuffer(m_uniformUboBuffers[i]);
-        m_device->freeMemory(m_uniformUboBuffersMemory[i]);
+        m_device->destroyBuffer(m_viewMatrixUBOBuffers[i]);
+        m_device->freeMemory(m_viewMatrixUBOBuffersMemory[i]);
+        m_device->destroyBuffer(m_elementStatusUBOBuffers[i]);
+        m_device->freeMemory(m_elementStatusUBOBuffersMemory[i]);
     }
 
     m_device->destroySwapchainKHR(m_swapChain);
@@ -1865,34 +1907,58 @@ void VulkanInstance::recreateSwapChain()
     createGraphicsPipeline();
     createDepthResources();
     createFramebuffers();
-    createuniformUboBuffers();
+    createViewMatrixUBOBuffers();
+    createElementStatusUBOBuffers();
     createDescriptorPool();
     createDescriptorSets();
     createCommandBuffers();
 }
 
-void VulkanInstance::updateUniformBuffer(uint32_t currentImage)
+void VulkanInstance::updateViewMatrixUBO(uint32_t currentImage)
 {
     static auto startTime   = std::chrono::high_resolution_clock::now();
     auto        currentTime = std::chrono::high_resolution_clock::now();
     float       time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    VulkanUtils::UniformBufferObject ubo{};
+    VulkanUtils::ViewMatrixUBO ubo{};
     ubo.model = Matrix4(1.f);
     ubo.view  = m_elements->m_viewMat;
     ubo.proj  = m_elements->getProjectionMatrix(m_swapChainExtent.width, m_swapChainExtent.height);
 
-    void* data = m_device->mapMemory(m_uniformUboBuffersMemory[currentImage], 0, sizeof(ubo));
+    void* data = m_device->mapMemory(m_viewMatrixUBOBuffersMemory[currentImage], 0, sizeof(ubo));
     memcpy(data, &ubo, sizeof(ubo));
-    m_device->unmapMemory(m_uniformUboBuffersMemory[currentImage]);
+    m_device->unmapMemory(m_viewMatrixUBOBuffersMemory[currentImage]);
 }
 
-void VulkanInstance::updateVertexBuffer()
+void VulkanInstance::updateElementStatusUBO(uint32_t currentImage)
 {
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Vertex));
-    void*          data       = m_device->mapMemory(m_vertexBufferMemory1, 0, bufferSize);
+    static auto startTime   = std::chrono::high_resolution_clock::now();
+    auto        currentTime = std::chrono::high_resolution_clock::now();
+    float       time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    std::vector<VulkanUtils::ElementStatusUBO> ubos;
+    for(int i=0; i<m_elements->m_elements.size(); i++) {
+        VulkanUtils::ElementStatusUBO ubo;
+        ubo.scale = glm::scale(Matrix4(1), Vector3(1.f));
+        ubo.is_running = false;
+        ubos.push_back(ubo);
+    }
+    uint32_t size = m_elements->m_elements.size()*sizeof(VulkanUtils::ElementStatusUBO);
+    void* data = m_device->mapMemory(m_elementStatusUBOBuffersMemory[currentImage], 0, size);
+    memcpy(data, ubos.data(), size);
+    m_device->unmapMemory(m_elementStatusUBOBuffersMemory[currentImage]);
+}
+
+void VulkanInstance::updateElementBuffer()
+{
+    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
+    void*          data       = m_device->mapMemory(m_elementBufferMemory1, 0, bufferSize);
     memcpy(data, m_elements->m_elements.data(), (size_t)bufferSize);
-    m_device->unmapMemory(m_vertexBufferMemory1);
+    m_device->unmapMemory(m_elementBufferMemory1);
+
+    // void*          data2       = m_device->mapMemory(m_elementBufferMemory2, 0, bufferSize);
+    // memcpy(data2, m_elements->m_elements.data(), (size_t)bufferSize);
+    // m_device->unmapMemory(m_elementBufferMemory2);
 }
 
 } // namespace sphexa

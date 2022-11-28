@@ -17,14 +17,28 @@ namespace sphexa
     {
         Vector4 position = Vector4(0.f, 0.f, 0.f, 1.f);
         Vector4 velocity = Vector4(0.f, 0.f, 0.f, 1.f);
-        Vector4 attr1    = Vector4(0.05f, 0.0125f, -1.f, 1.f);
-        Vector4 attr2 = Vector4(-1.f, -1.f, 1.f, 1.f);
-        Vector4 color = Vector4(1.f, 1.f, 1.f, 1.f); // not used
+        Matrix4 scale = glm::scale(Matrix4(1), Vector3(1.f, 1.f, 1.f));
+        Vector4 attr1    = Vector4(0.05f, 0.0125f, -1.f, 1.f); // radius, mass, is_running
+        Vector4 attr2 = Vector4(-1.f, -1.f, 1.f, 1.f); // neighborMax, hasBrokenBond, d, (null)
+        Vector4 color = Vector4(1.f, 1.f, 1.f, 1.f);
 
-        bool operator==(const Vertex& other) const
+        bool operator==(const Vertex& rhs) const
         {
-            return position == other.position && velocity == other.velocity && attr1 == other.attr1 &&
-                   attr2 == other.attr2 && color == other.color;
+            return position == rhs.position && velocity == rhs.velocity && attr1 == rhs.attr1 &&
+                   attr2 == rhs.attr2 && color == rhs.color;
+        }
+    };
+
+    struct Element
+    {
+        Vector4 position = Vector4(0.f, 0.f, 0.f, 1.f);
+        Vector4 velocity = Vector4(0.f, 0.f, 0.f, 1.f);
+        Matrix4 scale = glm::scale(Matrix4(1), Vector3(1.f, 1.f, 1.f));
+        Vector4 attr1    = Vector4(0.05f, 0.0125f, 1.f, 1.f); // radius, mass, is_running
+
+        bool operator==(const Vertex& rhs) const
+        {
+            return position == rhs.position && velocity == rhs.velocity && attr1 == rhs.attr1;
         }
     };
 

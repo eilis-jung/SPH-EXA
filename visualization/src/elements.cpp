@@ -27,10 +27,12 @@ void Elements::updateOrbit(float deltaX, float deltaY, float deltaZ)
 void Elements::updateMovement(bool flags[])
 {
     for(int i=0; i<m_elements.size(); i++) {
-        if(flags[i])
-            m_elements[i].position.x += 3.0f;
+        if(flags[i] == false)
+            // If running, z grows
+            m_elements[i].velocity = Vector4(0.0f, 10.f, 10.f, 0.f);
         else
-            m_elements[i].position.x += 0.0f;
+            // If not running, z shrinks
+            m_elements[i].velocity = Vector4(0.0f, 0.f, -10.f, 0.f);
     }
 }
 
@@ -57,11 +59,11 @@ void Elements::init(int numElements)
     {
         auto translation = m_elements[i].position;
         translation.w    = 0.f;
-        for (int j = 0; j < m_verts.size(); j++)
+        for (int j = 0; j < m_model_vertices.size(); j++)
         {
-            Vertex v = m_verts[j];
+            Vertex v = m_model_vertices[j];
             v.position += translation;
-            m_all_verts.push_back(v);
+            m_vertices.push_back(v);
             m_all_indices.push_back(currVertexInd);
             currVertexInd++;
         }
@@ -97,13 +99,10 @@ void Elements::loadModel(std::string modelPath, Vector4 initColor)
 
             vertex.position   = Vector4(pos, 1.f) * scale;
             vertex.position.w = 1.f;
-            // For now all cubes are rendered white
             vertex.color      = initColor;
-
-            m_verts.push_back(vertex);
-            m_indices.push_back(m_indices.size());
+            m_model_vertices.push_back(vertex);
         }
     }
 
-    std::cout << "Model has " << m_verts.size() << "vertices." << std::endl;
+    std::cout << "Model has " << m_model_vertices.size() << " vertices." << std::endl;
 }
