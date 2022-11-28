@@ -66,7 +66,7 @@ public:
     {
         while (!glfwWindowShouldClose(m_pGLFWWindow))
         {
-            mut.lock();
+            // mut.lock();
             glfwPollEvents();
             bool needUpdate = false;
             for (int i = 0; i < 3; i++)
@@ -82,14 +82,8 @@ public:
             if (needUpdate)
             {
                 m_elements->updateMovement(flags);
-                m_vulkanInstance.drawFrameWithUpdatedVertices();
-                mut.unlock();
             }
-            else
-            {
-                m_vulkanInstance.drawFrame();
-                mut.unlock();
-            }
+            m_vulkanInstance.drawFrameWithUpdatedVertices();
         }
         m_vulkanInstance.idle();
     }

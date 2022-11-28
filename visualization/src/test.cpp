@@ -4,6 +4,7 @@
 #include <thread>
 #include <memory>
 #include <vector>
+#include <unistd.h>
 #include "window.h"
 #define THREAD_NUM 3
 
@@ -18,13 +19,11 @@ std::mutex count_mutex;
 void computation(void)
 {
     omp_set_num_threads(THREAD_NUM); // set number of threads in "parallel" blocks
-
+    int t = 2;
 #pragma omp parallel
     {
-        double a = 1;
-        for(int i=0; i<100000000*(omp_get_thread_num()+1); i++) {
-            a += 0.01;
-        }
+
+        sleep(t*omp_get_thread_num());
         #pragma omp critical
         {
             count_mutex.lock();

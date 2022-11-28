@@ -28,9 +28,9 @@ void Elements::updateMovement(bool flags[])
 {
     for(int i=0; i<m_elements.size(); i++) {
         if(flags[i])
-            m_elements[i].position.x += 3.0f;
+            m_elements[i].attr1.x = 1.0f;
         else
-            m_elements[i].position.x += 0.0f;
+            m_elements[i].attr1.x = -1.0f;
     }
 }
 
