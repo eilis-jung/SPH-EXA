@@ -35,9 +35,11 @@ void main() {
 	mat4 modelMat = elementsA[elementID].modelMat;
 	vertices[index].position = modelMat * vertices[index].position;
 
-	// Velocity ranges [-1, 1]
-	float normalizedVel = (elementsA[elementID].velocity.y + 1.0)/2.0;
-
+	// Coloring
+	// Velocity ranges [0, 1]
+	float normalizedVel = (elementsA[elementID].velocity.y);
+	float yColor = normalize(vertices[index].position.y) * normalizedVel * 0.5;
+	
 	// When the bar stops, it should be white. When it moves it's red.
-	vertices[index].color = vec4(1.0 , 1. - normalizedVel , 1. - normalizedVel, 1.0);
+	vertices[index].color = vec4(1.0 , 1. - yColor , 1. - yColor, 1.0);
 }

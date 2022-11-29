@@ -1,7 +1,6 @@
 
 #pragma once
 
-#define GLM_FORCE_SWIZZLE
 #include <algorithm>
 #include <array>
 #include <glm/glm.hpp>
@@ -14,6 +13,7 @@
 
 namespace sphexa
 {
+    using Vector2 = glm::vec2;
     using Vector3 = glm::vec3;
     using Vector4 = glm::vec4;
     using Matrix4 = glm::mat4;
@@ -22,6 +22,7 @@ namespace sphexa
     {
         alignas(16) Vector4 position = Vector4(0.f, 0.f, 0.f, 1.f);
         alignas(16) Vector4 color = Vector4(1.f, 1.f, 1.f, 1.f);
+        alignas(16) Vector2 texCoord = Vector2(1.f, 0.5f);
 
         bool operator==(const Vertex& rhs) const
         {
@@ -37,8 +38,8 @@ namespace sphexa
         alignas(16) Vector4 velocity = Vector4(0.f);
         alignas(16) Matrix4 modelMat = Matrix4(1.f);
         
-        void updateModelMat() {
-            scale = scale + (float)DELTA_TIME * velocity;
+        void updateModelMat(float & deltaTime) {
+            scale = scale + deltaTime * velocity;
             scale = glm::clamp(scale, Vector4(MIN_SCALE), Vector4(MAX_SCALE));
             modelMat = glm::translate(glm::scale(Matrix4(1.f), Vector3(scale)), Vector3(position));
             modelMat = glm::translate(Matrix4(1.f), Vector3(root + position - modelMat * root)) * modelMat;

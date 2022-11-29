@@ -4,7 +4,7 @@ using namespace sphexa;
 
 vk::VertexInputBindingDescription VulkanUtils::getBindingDescription()
 {
-    vk::VertexInputBindingDescription bindingDescription {};
+    vk::VertexInputBindingDescription bindingDescription{};
     bindingDescription.binding   = 0;
     bindingDescription.stride    = sizeof(Vertex);
     bindingDescription.inputRate = vk::VertexInputRate::eVertex;
@@ -14,7 +14,7 @@ vk::VertexInputBindingDescription VulkanUtils::getBindingDescription()
 std::vector<vk::VertexInputAttributeDescription> VulkanUtils::getAttributeDescriptions()
 {
     std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
-    attributeDescriptions.resize(2);
+    attributeDescriptions.resize(3);
 
     attributeDescriptions[0].binding  = 0;
     attributeDescriptions[0].location = 0;
@@ -26,11 +26,16 @@ std::vector<vk::VertexInputAttributeDescription> VulkanUtils::getAttributeDescri
     attributeDescriptions[1].format   = vk::Format::eR32G32B32Sfloat;
     attributeDescriptions[1].offset   = offsetof(Vertex, color);
 
+    attributeDescriptions[2].binding  = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format   = vk::Format::eR32G32Sfloat;
+    attributeDescriptions[2].offset   = offsetof(Vertex, texCoord);
+
     return attributeDescriptions;
 }
 
 vk::UniqueShaderModule VulkanUtils::createShaderModule(vk::UniqueDevice&                 device,
-                                                               const std::vector<unsigned char>& shader_code)
+                                                       const std::vector<unsigned char>& shader_code)
 
 {
     try

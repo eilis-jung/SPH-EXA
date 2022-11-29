@@ -84,9 +84,6 @@ namespace sphexa
         std::vector<vk::Buffer>       m_viewMatrixUBOBuffers;
         std::vector<vk::DeviceMemory> m_viewMatrixUBOBuffersMemory;
 
-        std::vector<vk::Buffer>       m_elementStatusUBOBuffers;
-        std::vector<vk::DeviceMemory> m_elementStatusUBOBuffersMemory;
-
         vk::DescriptorPool                                                m_descriptorPool;
         std::vector<vk::DescriptorSet>                                    m_descriptorSets;
         std::vector<vk::CommandBuffer, std::allocator<vk::CommandBuffer>> m_commandBuffers;
@@ -163,7 +160,6 @@ namespace sphexa
         void              createVerticesBuffer();
         void createComputePipeline(const std::vector<unsigned char>& shaderCode, vk::Pipeline& pipelineIdx);
         void createViewMatrixUBOBuffers();
-        void createElementStatusUBOBuffers();
         void createDescriptorPool();
         void createDescriptorSets();
         void createCommandBuffers();
@@ -171,7 +167,6 @@ namespace sphexa
         void cleanupSwapChain();
         void recreateSwapChain();
         void updateViewMatrixUBO(uint32_t currentImage);
-        void updateElementStatusUBO(uint32_t currentImage);
         void updateElementBuffer();
     };
 } // namespace sphexa

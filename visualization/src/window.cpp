@@ -61,14 +61,14 @@ void Window::mouseMoveCallback(GLFWwindow* window, double pos_x, double pos_y)
         m_prev_y = pos_y;
 
         Window* w = static_cast<Window *>(glfwGetWindowUserPointer(window));
-        w->m_elements->updateOrbit(delta_x, delta_y, 0.0f);
+        w->m_elements->m_camera.updateOrbit(delta_x, delta_y, 0.0f);
     }
     else if (m_mouse_right_down)
     {
         float delta_z = static_cast<float>((m_prev_y - pos_y) * 0.05f);
         m_prev_y      = pos_y;
         Window* w = static_cast<Window *>(glfwGetWindowUserPointer(window));
-        w->m_elements->updateOrbit(0.0f, 0.0f, delta_z);
+        w->m_elements->m_camera.updateOrbit(0.0f, 0.0f, delta_z);
     }
 }
 void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)

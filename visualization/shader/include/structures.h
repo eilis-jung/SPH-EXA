@@ -1,6 +1,7 @@
 struct Vertex {
     vec4 position;
 	vec4 color;
+	vec2 texCoord;
 };
 
 struct Element {
