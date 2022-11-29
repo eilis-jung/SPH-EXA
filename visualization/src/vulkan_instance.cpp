@@ -200,7 +200,7 @@ void VulkanInstance::drawFrameWithUpdatedVertices()
     
     updateViewMatrixUBO(imageIndex);
     updateElementStatusUBO(imageIndex);
-    // updateElementBuffer();
+    updateElementBuffer();
     vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
     copyBuffer(m_elementBuffer2, m_elementBuffer1, bufferSize);
     vk::SubmitInfo submitInfo = {};
@@ -700,7 +700,7 @@ void VulkanInstance::createRenderPass()
     dependency.dstAccessMask =
         vk::AccessFlagBits::eDepthStencilAttachmentWrite | vk::AccessFlagBits::eColorAttachmentWrite;
 
-    std::array<vk::AttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+    std::vector<vk::AttachmentDescription> attachments = {colorAttachment, depthAttachment};
 
     vk::RenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.attachmentCount          = static_cast<uint32_t>(attachments.size());
@@ -985,7 +985,7 @@ void VulkanInstance::createFramebuffers()
 
     for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
     {
-        std::array<vk::ImageView, 2> attachments = {m_swapChainImageViews[i], m_depthImageView};
+        std::vector<vk::ImageView> attachments = {m_swapChainImageViews[i], m_depthImageView};
 
         vk::FramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.renderPass                = m_renderPass;
@@ -1435,7 +1435,8 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 
-    std::array<vk::DescriptorPoolSize, 1> poolSizes{};
+    std::vector<vk::DescriptorPoolSize> poolSizes{};
+    poolSizes.resize(1);
     poolSizes[0].type            = vk::DescriptorType::eStorageBuffer;
     poolSizes[0].descriptorCount = 10;
 
@@ -1526,11 +1527,11 @@ void VulkanInstance::createComputePipeline(const std::vector<unsigned char>& sha
     writeComputeInfovertices.descriptorType         = vk::DescriptorType::eStorageBuffer;
     writeComputeInfovertices.pBufferInfo            = &computeBufferInfovertices;
 
-    std::array<vk::WriteDescriptorSet, 4> writeDescriptorSets = {writeComputeInfoVertices1, writeComputeInfoVertices2,
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {writeComputeInfoVertices1, writeComputeInfoVertices2,
                                                                  writeComputeInfoNumVerts, writeComputeInfovertices};
     m_device->updateDescriptorSets(static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0,
                                    nullptr);
-    std::array<vk::DescriptorSetLayout, 1> descriptorSetLayouts = {m_computeDescriptorSetLayouts.back()};
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = {m_computeDescriptorSetLayouts.back()};
 
     vk::PipelineLayoutCreateInfo computePipelineLayoutInfo = {};
     computePipelineLayoutInfo.flags                        = vk::PipelineLayoutCreateFlags();
@@ -1597,7 +1598,8 @@ void VulkanInstance::createElementStatusUBOBuffers()
 
 void VulkanInstance::createDescriptorPool()
 {
-    std::array<vk::DescriptorPoolSize, 2> descriptorPoolSizes{};
+    std::vector<vk::DescriptorPoolSize> descriptorPoolSizes;
+    descriptorPoolSizes.resize(2);
     descriptorPoolSizes[0].type            = vk::DescriptorType::eUniformBuffer;
     descriptorPoolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
 
@@ -1662,7 +1664,8 @@ void VulkanInstance::createDescriptorSets()
         // bufferInfo.offset = 0;
         // bufferInfo.range  = m_elements->m_elements.size() * sizeof(VulkanUtils::ElementStatusUBO);
 
-        std::array<vk::WriteDescriptorSet, 2> descriptorWrites{};
+        std::vector<vk::WriteDescriptorSet> descriptorWrites;
+        descriptorWrites.resize(2);
         descriptorWrites[0].dstSet = m_descriptorSets[i];
         // Give our uniform buffer binding index 0
         descriptorWrites[0].dstBinding = 0;
@@ -1733,7 +1736,8 @@ void VulkanInstance::createCommandBuffers()
         renderPassInfo.renderArea.offset       = vk::Offset2D{0, 0};
         renderPassInfo.renderArea.extent       = m_swapChainExtent;
 
-        std::array<vk::ClearValue, 2> clearValues{};
+        std::vector<vk::ClearValue> clearValues;
+        clearValues.resize(2);
         clearValues[0].color        = m_bgColor;
         clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0f, 0};
 
@@ -1940,10 +1944,6 @@ void VulkanInstance::updateElementBuffer()
     void*          data       = m_device->mapMemory(m_elementBufferMemory1, 0, bufferSize);
     memcpy(data, m_elements->m_elements.data(), (size_t)bufferSize);
     m_device->unmapMemory(m_elementBufferMemory1);
-
-    // void*          data2       = m_device->mapMemory(m_elementBufferMemory2, 0, bufferSize);
-    // memcpy(data2, m_elements->m_elements.data(), (size_t)bufferSize);
-    // m_device->unmapMemory(m_elementBufferMemory2);
 }
 
 } // namespace sphexa

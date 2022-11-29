@@ -29,9 +29,6 @@ void main() {
 		return;
 
 	Element p = elementsA[index];
-	// vec3 pos = p.position.xyz;
-	const float dt = 0.17f;
-	vec3 xNew = p.position.xyz + p.velocity.xyz * dt;
-	elementsB[index].position.xyz = xNew;
+
 
 }

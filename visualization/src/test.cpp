@@ -4,8 +4,13 @@
 #include <thread>
 #include <memory>
 #include <vector>
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 #include "window.h"
-#define THREAD_NUM 3
+#define THREAD_NUM 2
 
 using namespace sphexa;
 
@@ -17,20 +22,16 @@ std::mutex count_mutex;
 
 void computation(void)
 {
-    omp_set_num_threads(THREAD_NUM); // set number of threads in "parallel" blocks
+    omp_set_num_threads(THREAD_NUM);
 
 #pragma omp parallel
     {
-        double a = 1;
-        for(int i=0; i<100000000*(omp_get_thread_num()+1); i++) {
-            a += 0.01;
-        }
+        sleep(5*omp_get_thread_num());
         #pragma omp critical
         {
             count_mutex.lock();
             std::cout << "Current thread number: " << omp_get_thread_num() << std::endl;
             count[omp_get_thread_num()] = true;
-            
             count_mutex.unlock();
         }
     }

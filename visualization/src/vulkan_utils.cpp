@@ -11,9 +11,10 @@ vk::VertexInputBindingDescription VulkanUtils::getBindingDescription()
     return bindingDescription;
 }
 
-std::array<vk::VertexInputAttributeDescription, 5> VulkanUtils::getAttributeDescriptions()
+std::vector<vk::VertexInputAttributeDescription> VulkanUtils::getAttributeDescriptions()
 {
-    std::array<vk::VertexInputAttributeDescription, 5> attributeDescriptions {};
+    std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
+    attributeDescriptions.resize(2);
 
     attributeDescriptions[0].binding  = 0;
     attributeDescriptions[0].location = 0;
@@ -23,22 +24,7 @@ std::array<vk::VertexInputAttributeDescription, 5> VulkanUtils::getAttributeDesc
     attributeDescriptions[1].binding  = 0;
     attributeDescriptions[1].location = 1;
     attributeDescriptions[1].format   = vk::Format::eR32G32B32Sfloat;
-    attributeDescriptions[1].offset   = offsetof(Vertex, velocity);
-
-    attributeDescriptions[2].binding  = 0;
-    attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format   = vk::Format::eR32G32B32Sfloat;
-    attributeDescriptions[2].offset   = offsetof(Vertex, attr1);
-
-    attributeDescriptions[3].binding  = 0;
-    attributeDescriptions[3].location = 3;
-    attributeDescriptions[3].format   = vk::Format::eR32G32B32Sfloat;
-    attributeDescriptions[3].offset   = offsetof(Vertex, attr2);
-
-    attributeDescriptions[4].binding  = 0;
-    attributeDescriptions[4].location = 4;
-    attributeDescriptions[4].format   = vk::Format::eR32G32B32Sfloat;
-    attributeDescriptions[4].offset   = offsetof(Vertex, color);
+    attributeDescriptions[1].offset   = offsetof(Vertex, color);
 
     return attributeDescriptions;
 }

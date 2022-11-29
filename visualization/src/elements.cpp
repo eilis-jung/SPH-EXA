@@ -5,7 +5,6 @@
 
 using namespace sphexa;
 
-
 void Elements::updateOrbit(float deltaX, float deltaY, float deltaZ)
 {
     theta += deltaX;
@@ -26,13 +25,22 @@ void Elements::updateOrbit(float deltaX, float deltaY, float deltaZ)
 
 void Elements::updateMovement(bool flags[])
 {
-    for(int i=0; i<m_elements.size(); i++) {
-        if(flags[i] == false)
-            // If running, z grows
-            m_elements[i].velocity = Vector4(0.0f, 10.f, 10.f, 0.f);
+    float dt = 0.0001;
+    for (int i = 0; i < m_elements.size(); i++)
+    {
+        if (flags[i] == false)
+        { // If running, z grows
+            m_elements[i].velocity = Vector3(0.f, 1.f, 0.f);
+        }
         else
-            // If not running, z shrinks
-            m_elements[i].velocity = Vector4(0.0f, 0.f, -10.f, 0.f);
+        { // If not running, z shrinks
+            m_elements[i].velocity = Vector3(0.f, -1.f, 0.f);
+        }
+        
+        m_elements[i].scale = glm::clamp(Vector3(1.f) + m_elements[i].velocity * dt, Vector3(0.1, 0.1, 0.1), Vector3(20, 20,20));
+        
+        // m_elements[i].scale = Vector3(1.f);
+        m_elements[i].updateModelMat();
     }
 }
 
@@ -46,23 +54,17 @@ Matrix4 Elements::getProjectionMatrix(size_t width, size_t height)
 void Elements::init(int numElements)
 {
     loadModel(m_modelObjPath);
-    int           numVertices = 0;
-    ElementsGenerator::createCube(
-        m_elements, 
-        m_element_indices, 
-        numVertices,
-        Vector3(1.f, 1.f, (float)numElements), 
-        Vector3(2.f, 3.f, 2.f));
+    int numVertices = 0;
+    ElementsGenerator::createCube(m_elements, m_element_indices, numVertices, Vector3(1.f, 1.f, (float)numElements),
+                                  Vector3(-1.f, 0.f, 0.f));
 
     int currVertexInd = 0;
     for (int i = 0; i < m_elements.size(); i++)
     {
-        auto translation = m_elements[i].position;
-        translation.w    = 0.f;
         for (int j = 0; j < m_model_vertices.size(); j++)
         {
-            Vertex v = m_model_vertices[j];
-            v.position += translation;
+            Vertex v   = m_model_vertices[j];
+            v.position = v.position;
             m_vertices.push_back(v);
             m_all_indices.push_back(currVertexInd);
             currVertexInd++;
@@ -87,7 +89,6 @@ void Elements::loadModel(std::string modelPath, Vector4 initColor)
         return;
     }
 
-    const float scale = 0.2f;
     for (const auto& shape : shapes)
     {
         for (const auto& index : shape.mesh.indices)
@@ -97,9 +98,8 @@ void Elements::loadModel(std::string modelPath, Vector4 initColor)
             Vector3 pos = {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1],
                            attrib.vertices[3 * index.vertex_index + 2]};
 
-            vertex.position   = Vector4(pos, 1.f) * scale;
-            vertex.position.w = 1.f;
-            vertex.color      = initColor;
+            vertex.position = Vector4(pos, 1.f);
+            vertex.color    = initColor;
             m_model_vertices.push_back(vertex);
         }
     }

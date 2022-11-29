@@ -2,10 +2,12 @@
 
 using namespace sphexa;
 
+#define GENERAL_MODEL_SCALING 1
+
 void ElementsGenerator::createCube(std::vector<Element>& elements, std::vector<uint32_t>& elementIndices, int& numElements,
                                  const Vector3& numElementPerSide, const Vector3& offset)
 {
-    Vector3 lengths = numElementPerSide;
+    Vector3 lengths = numElementPerSide * 0.2f;
 
     int currElementIndex = numElements;
     for (int i = 0; i < numElementPerSide.x; ++i)
@@ -19,7 +21,9 @@ void ElementsGenerator::createCube(std::vector<Element>& elements, std::vector<u
                 position += offset;
 
                 Element element;
-                element.position = Vector4(position, 1.f);
+                element.translation = position*0.001f;
+                element.scale = Vector3(1.f);
+                element.updateModelMat();
                 elements.push_back(element);
                 elementIndices.push_back(currElementIndex);
                 currElementIndex++;
@@ -28,43 +32,4 @@ void ElementsGenerator::createCube(std::vector<Element>& elements, std::vector<u
     }
 
     numElements = currElementIndex;
-}
-
-void ElementsGenerator::createSphere(std::vector<Element>& elements, std::vector<uint32_t>& elementIndices, int& numElements,
-                                   const int numElementPerSide, const Vector3& offset,
-                                   const Vector3& InitialVel)
-{
-    float       length   = float(numElementPerSide) / 10.f;
-    const float midPoint = float(numElementPerSide) / 2;
-
-    int idx = numElements;
-    for (int i = 0; i < numElementPerSide; ++i) // z
-    {
-        for (int j = 0; j < numElementPerSide; ++j) // y
-        {
-            float   y      = j * length / float(numElementPerSide);
-            float   mid_l  = midPoint * length / float(numElementPerSide);
-            float   dy     = j < midPoint ? mid_l - y : y - mid_l;
-            float   r2     = mid_l * mid_l - dy * dy;
-            Vector3 center = Vector3(mid_l, y, mid_l) + offset;
-            for (int k = 0; k < numElementPerSide; ++k) // x
-            {
-                Vector3 position;
-                position = Vector3(k * length / float(numElementPerSide), y, i * length / float(numElementPerSide));
-                position += offset;
-
-                Vector3 diff = position - center;
-                if (diff.x * diff.x + diff.z * diff.z > r2) continue;
-
-                Element v;
-                v.position = Vector4(position, 1.f);
-                v.velocity = Vector4(InitialVel, 1.f);
-                elements.push_back(v);
-                elementIndices.push_back(idx);
-                idx++;
-            }
-        }
-    }
-
-    numElements = idx;
 }

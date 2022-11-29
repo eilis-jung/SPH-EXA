@@ -64,7 +64,7 @@ namespace sphexa
 
         vk::VertexInputBindingDescription getBindingDescription();
 
-        std::array<vk::VertexInputAttributeDescription, 5> getAttributeDescriptions();
+        std::vector<vk::VertexInputAttributeDescription> getAttributeDescriptions();
 
         vk::UniqueShaderModule createShaderModule(vk::UniqueDevice&                 device,
                                                   const std::vector<unsigned char>& shader_code);

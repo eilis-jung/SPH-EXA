@@ -66,30 +66,18 @@ public:
     {
         while (!glfwWindowShouldClose(m_pGLFWWindow))
         {
-            mut.lock();
             glfwPollEvents();
-            bool needUpdate = false;
             for (int i = 0; i < 3; i++)
             {
                 if (flags[i] != flags_prev[i])
                 {
                     std::cout << "Current thread number: " << i << " is finished." << std::endl;
                     flags_prev[i] = flags[i];
-                    needUpdate    = true;
                     break;
                 }
             }
-            if (needUpdate)
-            {
-                m_elements->updateMovement(flags);
-                m_vulkanInstance.drawFrameWithUpdatedVertices();
-                mut.unlock();
-            }
-            else
-            {
-                m_vulkanInstance.drawFrame();
-                mut.unlock();
-            }
+            m_elements->updateMovement(flags);
+            m_vulkanInstance.drawFrameWithUpdatedVertices();
         }
         m_vulkanInstance.idle();
     }
