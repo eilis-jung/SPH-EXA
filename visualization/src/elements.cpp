@@ -33,6 +33,7 @@ void Elements::updateMovement(bool flags[])
         else
             // If not running, z shrinks
             m_elements[i].velocity = Vector4(0.0f, 0.f, -10.f, 0.f);
+        m_elements[i].updateModelMat();
     }
 }
 
@@ -57,12 +58,9 @@ void Elements::init(int numElements)
     int currVertexInd = 0;
     for (int i = 0; i < m_elements.size(); i++)
     {
-        auto translation = m_elements[i].position;
-        translation.w    = 0.f;
         for (int j = 0; j < m_model_vertices.size(); j++)
         {
             Vertex v = m_model_vertices[j];
-            v.position += translation;
             m_vertices.push_back(v);
             m_all_indices.push_back(currVertexInd);
             currVertexInd++;
