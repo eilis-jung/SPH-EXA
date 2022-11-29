@@ -28,11 +28,10 @@ void Elements::updateMovement(bool flags[])
 {
     for(int i=0; i<m_elements.size(); i++) {
         if(flags[i] == false)
-            m_elements[i].velocity = Vector3(0.0f, 1.f, 0.f);
+            m_elements[i].velocity.y = 1.f;
         else
-            m_elements[i].velocity = Vector3(0.0f, -1.f, 0.f);
+            m_elements[i].velocity.y = 0.f;
         m_elements[i].updateModelMat();
-        int a = 3;
     }
 }
 

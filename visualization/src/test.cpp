@@ -18,17 +18,17 @@ std::mutex count_mutex;
 
 void computation(void)
 {
-    omp_set_num_threads(THREAD_NUM); // set number of threads in "parallel" blocks
+    omp_set_num_threads(THREAD_NUM);
 
 #pragma omp parallel
     {
         sleep(5 * omp_get_thread_num());
         #pragma omp critical
         {
-            // count_mutex.lock();
+            count_mutex.lock();
             std::cout << "Current thread number: " << omp_get_thread_num() << std::endl;
             count[omp_get_thread_num()] = true;
-            // count_mutex.unlock();
+            count_mutex.unlock();
         }
     }
 }

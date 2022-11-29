@@ -32,10 +32,9 @@ void main() {
 		return;
 	
 	int elementID = int(index) / NUM_MODEL_VERTICES;
-		
 	mat4 modelMat = elementsA[elementID].modelMat;
 	vertices[index].position = modelMat * vertices[index].position;
-	
+
 	// Velocity ranges [-1, 1]
 	float normalizedVel = (elementsA[elementID].velocity.y + 1.0)/2.0;
 

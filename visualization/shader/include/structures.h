@@ -4,8 +4,9 @@ struct Vertex {
 };
 
 struct Element {
-    vec3 position;
-	vec3 scale;
-	vec3 velocity;
+	vec4 root;
+    vec4 position;
+	vec4 scale;
+	vec4 velocity;
 	mat4 modelMat;
 };
