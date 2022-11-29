@@ -7,6 +7,8 @@
 #include <limits>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define DELTA_TIME 0.0001f
+
 namespace sphexa
 {
     using Vector3 = glm::vec3;
@@ -32,8 +34,8 @@ namespace sphexa
         alignas(16) Matrix4 modelMat = Matrix4(1.f);
 
         void updateModelMat() {
-            // modelMat = glm::scale(glm::translate(Matrix4(1.f), Vector3(0.f, 0.f, 0.f)), scale);
-            modelMat = glm::translate(glm::scale(Matrix4(1.f), scale), Vector3(0.f, 0.f, 0.f));
+            scale = scale + (float)DELTA_TIME * velocity;
+            scale = glm::clamp(scale, Vector3(0.3f), Vector3(20.f));
             modelMat = glm::translate(glm::scale(Matrix4(1.f), scale), position);
         }
 

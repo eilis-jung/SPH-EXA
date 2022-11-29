@@ -4,6 +4,7 @@
 #include <thread>
 #include <memory>
 #include <vector>
+#include <unistd.h>
 #include "window.h"
 #define THREAD_NUM 3
 
@@ -21,17 +22,13 @@ void computation(void)
 
 #pragma omp parallel
     {
-        double a = 1;
-        for(int i=0; i<100000000*(omp_get_thread_num()+1); i++) {
-            a += 0.01;
-        }
+        sleep(5 * omp_get_thread_num());
         #pragma omp critical
         {
-            count_mutex.lock();
+            // count_mutex.lock();
             std::cout << "Current thread number: " << omp_get_thread_num() << std::endl;
             count[omp_get_thread_num()] = true;
-            
-            count_mutex.unlock();
+            // count_mutex.unlock();
         }
     }
 }

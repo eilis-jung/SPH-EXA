@@ -28,23 +28,12 @@ void Elements::updateMovement(bool flags[])
 {
     for(int i=0; i<m_elements.size(); i++) {
         if(flags[i] == false)
-            // If running, z grows
-            m_elements[i].velocity = Vector4(0.0f, 10.f, 10.f, 0.f);
+            m_elements[i].velocity = Vector3(0.0f, 1.f, 0.f);
         else
-            // If not running, z shrinks
-            m_elements[i].velocity = Vector4(0.0f, 0.f, -10.f, 0.f);
+            m_elements[i].velocity = Vector3(0.0f, -1.f, 0.f);
         m_elements[i].updateModelMat();
         int a = 3;
     }
-
-    // int numModel = 36;
-
-    // for(int i=0; i<m_vertices.size(); i++) {
-    //     int modelInd = i / 36;
-    //     auto modelMat = m_elements[modelInd].modelMat;
-    //     m_vertices[i].position = modelMat * m_vertices[i].position;
-    //     int ttt = 5;
-    // }
 }
 
 Matrix4 Elements::getProjectionMatrix(size_t width, size_t height)

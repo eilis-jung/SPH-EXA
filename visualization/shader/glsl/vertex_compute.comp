@@ -32,12 +32,13 @@ void main() {
 		return;
 	
 	int elementID = int(index) / NUM_MODEL_VERTICES;
-    if (elementID >= 3) {
-		vertices[index].color = vec4(0., 0., 1., 1.);
-		return;
-	}
 		
 	mat4 modelMat = elementsA[elementID].modelMat;
-	// modelMat = transpose(modelMat);
 	vertices[index].position = modelMat * vertices[index].position;
+	
+	// Velocity ranges [-1, 1]
+	float normalizedVel = (elementsA[elementID].velocity.y + 1.0)/2.0;
+
+	// When the bar stops, it should be white. When it moves it's red.
+	vertices[index].color = vec4(1.0 , 1. - normalizedVel , 1. - normalizedVel, 1.0);
 }
