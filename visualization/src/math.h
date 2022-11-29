@@ -15,8 +15,8 @@ namespace sphexa
     
     struct Vertex
     {
-        Vector4 position = Vector4(0.f, 0.f, 0.f, 1.f);
-        Vector4 color = Vector4(1.f, 1.f, 1.f, 1.f);
+        alignas(16) Vector4 position = Vector4(0.f, 0.f, 0.f, 1.f);
+        alignas(16) Vector4 color = Vector4(1.f, 1.f, 1.f, 1.f);
 
         bool operator==(const Vertex& rhs) const
         {
@@ -26,13 +26,15 @@ namespace sphexa
 
     struct Element
     {
-        Vector3 position = Vector3(0.f, 0.f, 0.f);
-        Vector3 scale = Vector3(1.f);
-        Vector3 velocity = Vector3(0.f, 0.f, 0.f);
-        Matrix4 modelMat = Matrix4(1.f);
+        alignas(16) Vector3 position = Vector3(0.f, 0.f, 0.f);
+        alignas(16) Vector3 scale = Vector3(1.f);
+        alignas(16) Vector3 velocity = Vector3(0.f, 0.f, 0.f);
+        alignas(16) Matrix4 modelMat = Matrix4(1.f);
 
         void updateModelMat() {
-            modelMat = glm::scale(glm::translate(Matrix4(1.f), position), scale);
+            // modelMat = glm::scale(glm::translate(Matrix4(1.f), Vector3(0.f, 0.f, 0.f)), scale);
+            modelMat = glm::translate(glm::scale(Matrix4(1.f), scale), Vector3(0.f, 0.f, 0.f));
+            modelMat = glm::translate(glm::scale(Matrix4(1.f), scale), position);
         }
 
         bool operator==(const Element& rhs) const

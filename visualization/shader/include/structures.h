@@ -6,6 +6,6 @@ struct Vertex {
 struct Element {
     vec3 position;
 	vec3 scale;
-	vec4 velocity;
+	vec3 velocity;
 	mat4 modelMat;
 };

@@ -32,8 +32,12 @@ void main() {
 		return;
 	
 	int elementID = int(index) / NUM_MODEL_VERTICES;
-	// vec3 deltaPos = elementsB[elementID].position.xyz - elementsA[elementID].position.xyz;
-	// vertices[index].position.xyz += deltaPos;
-	// deltaPos = vec3(0.f, elementsA[elementID].attr1.z * 0.00006f, 0.f);
-	vertices[index].position = elementsA[elementID].modelMat * vertices[index].position;
+    if (elementID >= 3) {
+		vertices[index].color = vec4(0., 0., 1., 1.);
+		return;
+	}
+		
+	mat4 modelMat = elementsA[elementID].modelMat;
+	// modelMat = transpose(modelMat);
+	vertices[index].position = modelMat * vertices[index].position;
 }

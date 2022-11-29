@@ -15,15 +15,15 @@ void Window::mouseDownCallback(GLFWwindow* window, int button, int action, int m
     glfwGetCursorPos(window, &pos_x, &pos_y);
 
     if (button == GLFW_MOUSE_BUTTON_LEFT)
-        if (action == GLFW_PRESS)
+        {if (action == GLFW_PRESS)
             mouseButtonPressLeft(window, pos_x, pos_y);
         else if (action == GLFW_RELEASE)
-            mouseButtonReleaseLeft(window, pos_x, pos_y);
-        else if (button == GLFW_MOUSE_BUTTON_RIGHT)
-            if (action == GLFW_PRESS)
-                mouseButtonPressRight(window, pos_x, pos_y);
-            else if (action == GLFW_RELEASE)
-                mouseButtonReleaseRight(window, pos_x, pos_y);
+            mouseButtonReleaseLeft(window, pos_x, pos_y);}
+    else if (button == GLFW_MOUSE_BUTTON_RIGHT)
+        {if (action == GLFW_PRESS)
+            mouseButtonPressRight(window, pos_x, pos_y);
+        else if (action == GLFW_RELEASE)
+            mouseButtonReleaseRight(window, pos_x, pos_y);}
 }
 
 void Window::mouseButtonPressLeft(GLFWwindow* window, double pos_x, double pos_y)
@@ -35,6 +35,7 @@ void Window::mouseButtonPressLeft(GLFWwindow* window, double pos_x, double pos_y
 void Window::mouseButtonPressRight(GLFWwindow* window, double pos_x, double pos_y)
 {
     m_mouse_right_down = true;
+    glfwGetCursorPos(window, &m_prev_x, &m_prev_y);
     return;
 }
 void Window::mouseButtonReleaseLeft(GLFWwindow* window, double pos_x, double pos_y)
@@ -45,7 +46,7 @@ void Window::mouseButtonReleaseLeft(GLFWwindow* window, double pos_x, double pos
 void Window::mouseButtonReleaseRight(GLFWwindow* window, double pos_x, double pos_y)
 {
     m_mouse_right_down = false;
-    glfwGetCursorPos(window, &m_prev_x, &m_prev_y);
+    
     return;
 }
 

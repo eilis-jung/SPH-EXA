@@ -5,7 +5,7 @@ using namespace sphexa;
 void ElementsGenerator::createCube(std::vector<Element>& elements, std::vector<uint32_t>& elementIndices, int& numElements,
                                  const Vector3& numElementPerSide, const Vector3& offset)
 {
-    Vector3 lengths = numElementPerSide;
+    Vector3 lengths = numElementPerSide * 5.f;
 
     int currElementIndex = numElements;
     for (int i = 0; i < numElementPerSide.x; ++i)

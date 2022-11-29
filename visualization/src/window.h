@@ -67,7 +67,6 @@ public:
         while (!glfwWindowShouldClose(m_pGLFWWindow))
         {
             glfwPollEvents();
-            bool needUpdate = false;
             for (int i = 0; i < 3; i++)
             {
                 if (flags[i] != flags_prev[i])
@@ -77,9 +76,8 @@ public:
                     break;
                 }
             }
-
             m_elements->updateMovement(flags);
-            m_vulkanInstance.drawFrameWithUpdatedVertices();
+            m_vulkanInstance.drawFrame();
         }
         m_vulkanInstance.idle();
     }

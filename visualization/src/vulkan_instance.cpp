@@ -112,10 +112,11 @@ void VulkanInstance::drawFrame()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
-    copyBuffer(m_elementBuffer2, m_elementBuffer1, bufferSize);
+    // vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
+    // copyBuffer(m_elementBuffer2, m_elementBuffer1, bufferSize);
     updateViewMatrixUBO(imageIndex);
-    updateElementStatusUBO(imageIndex);
+    // updateElementStatusUBO(imageIndex);
+    updateElementBuffer();
     vk::SubmitInfo submitInfo = {};
 
     vk::Semaphore          waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
@@ -176,92 +177,92 @@ void VulkanInstance::drawFrame()
     m_currentFrame = (m_currentFrame + 1) % m_max_frames_in_flight;
 }
 
-void VulkanInstance::drawFrameWithUpdatedVertices()
-{
-    m_device->waitForFences(1, &m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+// void VulkanInstance::drawFrameWithUpdatedVertices()
+// {
+//     m_device->waitForFences(1, &m_inFlightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
-    uint32_t imageIndex;
-    try
-    {
-        vk::ResultValue result = m_device->acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(),
-                                                               m_imageAvailableSemaphores[m_currentFrame], nullptr);
-        imageIndex             = result.value;
-    }
-    catch (vk::OutOfDateKHRError err)
-    {
-        recreateSwapChain();
-        return;
-    }
-    catch (vk::SystemError err)
-    {
-        throw std::runtime_error("failed to acquire swap chain image!");
-    }
+//     uint32_t imageIndex;
+//     try
+//     {
+//         vk::ResultValue result = m_device->acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(),
+//                                                                m_imageAvailableSemaphores[m_currentFrame], nullptr);
+//         imageIndex             = result.value;
+//     }
+//     catch (vk::OutOfDateKHRError err)
+//     {
+//         recreateSwapChain();
+//         return;
+//     }
+//     catch (vk::SystemError err)
+//     {
+//         throw std::runtime_error("failed to acquire swap chain image!");
+//     }
 
     
-    updateViewMatrixUBO(imageIndex);
-    updateElementStatusUBO(imageIndex);
-    // updateElementBuffer();
-    vk::DeviceSize bufferSize = static_cast<uint32_t>(m_elements->m_elements.size() * sizeof(Element));
-    copyBuffer(m_elementBuffer2, m_elementBuffer1, bufferSize);
-    vk::SubmitInfo submitInfo = {};
+//     updateViewMatrixUBO(imageIndex);
+//     // updateElementStatusUBO(imageIndex);
+    
+    
+//     updateElementBuffer();
+//     vk::SubmitInfo submitInfo = {};
 
-    vk::Semaphore          waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
-    vk::PipelineStageFlags waitStages[]     = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-    submitInfo.waitSemaphoreCount           = 1;
-    submitInfo.pWaitSemaphores              = waitSemaphores;
-    submitInfo.pWaitDstStageMask            = waitStages;
+//     vk::Semaphore          waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
+//     vk::PipelineStageFlags waitStages[]     = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+//     submitInfo.waitSemaphoreCount           = 1;
+//     submitInfo.pWaitSemaphores              = waitSemaphores;
+//     submitInfo.pWaitDstStageMask            = waitStages;
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &m_commandBuffers[imageIndex];
+//     submitInfo.commandBufferCount = 1;
+//     submitInfo.pCommandBuffers    = &m_commandBuffers[imageIndex];
 
-    vk::Semaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
-    submitInfo.signalSemaphoreCount  = 1;
-    submitInfo.pSignalSemaphores     = signalSemaphores;
+//     vk::Semaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
+//     submitInfo.signalSemaphoreCount  = 1;
+//     submitInfo.pSignalSemaphores     = signalSemaphores;
 
-    m_device->resetFences(1, &m_inFlightFences[m_currentFrame]);
+//     m_device->resetFences(1, &m_inFlightFences[m_currentFrame]);
 
-    try
-    {
-        m_graphicsQueue.submit(submitInfo, m_inFlightFences[m_currentFrame]);
-    }
-    catch (vk::SystemError err)
-    {
-        throw std::runtime_error("failed to submit draw command buffer!");
-    }
+//     try
+//     {
+//         m_graphicsQueue.submit(submitInfo, m_inFlightFences[m_currentFrame]);
+//     }
+//     catch (vk::SystemError err)
+//     {
+//         throw std::runtime_error("failed to submit draw command buffer!");
+//     }
 
-    vk::PresentInfoKHR presentInfo = {};
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores    = signalSemaphores;
+//     vk::PresentInfoKHR presentInfo = {};
+//     presentInfo.waitSemaphoreCount = 1;
+//     presentInfo.pWaitSemaphores    = signalSemaphores;
 
-    vk::SwapchainKHR swapChains[] = {m_swapChain};
-    presentInfo.swapchainCount    = 1;
-    presentInfo.pSwapchains       = swapChains;
-    presentInfo.pImageIndices     = &imageIndex;
+//     vk::SwapchainKHR swapChains[] = {m_swapChain};
+//     presentInfo.swapchainCount    = 1;
+//     presentInfo.pSwapchains       = swapChains;
+//     presentInfo.pImageIndices     = &imageIndex;
 
-    vk::Result resultPresent;
-    try
-    {
-        resultPresent = m_presentQueue.presentKHR(presentInfo);
-    }
-    catch (vk::OutOfDateKHRError err)
-    {
-        resultPresent = vk::Result::eErrorOutOfDateKHR;
-    }
-    catch (vk::SystemError err)
-    {
-        throw std::runtime_error("failed to present swap chain image!");
-    }
+//     vk::Result resultPresent;
+//     try
+//     {
+//         resultPresent = m_presentQueue.presentKHR(presentInfo);
+//     }
+//     catch (vk::OutOfDateKHRError err)
+//     {
+//         resultPresent = vk::Result::eErrorOutOfDateKHR;
+//     }
+//     catch (vk::SystemError err)
+//     {
+//         throw std::runtime_error("failed to present swap chain image!");
+//     }
 
-    if (resultPresent == vk::Result::eSuboptimalKHR || resultPresent == vk::Result::eSuboptimalKHR ||
-        m_framebufferResized)
-    {
-        m_framebufferResized = false;
-        recreateSwapChain();
-        return;
-    }
+//     if (resultPresent == vk::Result::eSuboptimalKHR || resultPresent == vk::Result::eSuboptimalKHR ||
+//         m_framebufferResized)
+//     {
+//         m_framebufferResized = false;
+//         recreateSwapChain();
+//         return;
+//     }
 
-    m_currentFrame = (m_currentFrame + 1) % m_max_frames_in_flight;
-}
+//     m_currentFrame = (m_currentFrame + 1) % m_max_frames_in_flight;
+// }
 
 void VulkanInstance::idle() { m_device->waitIdle(); }
 
@@ -1369,7 +1370,7 @@ void VulkanInstance::createVerticesBuffer()
     createBuffer(bufferSize,
                  vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
                      vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer,
-                 vk::MemoryPropertyFlagBits::eDeviceLocal, m_verticesBuffer, m_verticesBufferMemory);
+                 vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostVisible, m_verticesBuffer, m_verticesBufferMemory);
 
     copyBuffer(stagingBuffer, m_verticesBuffer, bufferSize);
 
@@ -1941,9 +1942,12 @@ void VulkanInstance::updateElementBuffer()
     memcpy(data, m_elements->m_elements.data(), (size_t)bufferSize);
     m_device->unmapMemory(m_elementBufferMemory1);
 
-    // void*          data2       = m_device->mapMemory(m_elementBufferMemory2, 0, bufferSize);
-    // memcpy(data2, m_elements->m_elements.data(), (size_t)bufferSize);
-    // m_device->unmapMemory(m_elementBufferMemory2);
+    copyBuffer(m_elementBuffer1, m_elementBuffer2, bufferSize);
+
+    bufferSize = static_cast<uint32_t>(m_elements->m_vertices.size() * sizeof(Vertex));
+    data       = m_device->mapMemory(m_verticesBufferMemory, 0, bufferSize);
+    memcpy(data, m_elements->m_vertices.data(), (size_t)bufferSize);
+    m_device->unmapMemory(m_verticesBufferMemory);
 }
 
 } // namespace sphexa
