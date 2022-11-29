@@ -18,7 +18,6 @@ public:
     int           m_numSide             = 30;
     int           m_numForVisualization = m_numSide * m_numSide * m_numSide;
     float         m_deltaT              = 0.0017f;
-    float         m_scaleFactor   = 0.01f;
     float         r                     = 20.0f;
     float         theta                 = 1.0f;
     float         phi                   = -0.7f;
@@ -27,8 +26,6 @@ public:
     std::string   m_modelObjPath       = "../../../visualization/assets/models/cube.obj";
     std::string   m_modelPath           = "../../../visualization/assets/models/viking_room.obj";
     std::string   m_texturePath         = "../../../visualization/assets/images/viking_room.png";
-    const Matrix4 m_scaleMatrix =
-        glm::scale(Matrix4(1), Vector3(m_scaleFactor, m_scaleFactor, m_scaleFactor));
 #pragma endregion RenderingData
 
 #pragma region PositionData

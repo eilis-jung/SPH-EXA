@@ -85,7 +85,6 @@ void Elements::loadModel(std::string modelPath, Vector4 initColor)
         return;
     }
 
-    const float scale = 0.2f;
     for (const auto& shape : shapes)
     {
         for (const auto& index : shape.mesh.indices)
@@ -95,7 +94,7 @@ void Elements::loadModel(std::string modelPath, Vector4 initColor)
             Vector3 pos = {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1],
                            attrib.vertices[3 * index.vertex_index + 2]};
 
-            vertex.position   = Vector4(pos, 1.f) * scale;
+            vertex.position   = Vector4(pos, 1.f);
             vertex.position.w = 1.f;
             vertex.color      = initColor;
             m_model_vertices.push_back(vertex);
