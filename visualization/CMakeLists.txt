@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.17)
 project(visualization CXX)
 
 set(CMAKE_CXX_STANDARD 20)
+include(CheckLanguage)
 check_language(CUDA)
 if(CMAKE_CUDA_COMPILER)
     enable_language(CUDA)

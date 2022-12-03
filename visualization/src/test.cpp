@@ -6,7 +6,7 @@
 #include <vector>
 #include <unistd.h>
 #include "window.h"
-#define THREAD_NUM 3
+#define THREAD_NUM 5
 
 using namespace sphexa;
 

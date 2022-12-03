@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "math.h"
+#include "math_vis.h"
 #include "camera.h"
 #include "meta/singleton.h"
 

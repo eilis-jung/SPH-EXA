@@ -7,7 +7,7 @@
 #include <memory>
 #include <thread>
 
-#include "vulkan_instance.h"
+#include "renderer.hpp"
 #include "elements.h"
 
 namespace sphexa
@@ -29,7 +29,7 @@ private:
     static bool   framebufferResized;
 
 public:
-    VulkanInstance            m_vulkanInstance;
+    std::shared_ptr<Renderer>            m_renderer;
     std::shared_ptr<Elements> m_elements;
     Window(uint32_t width, uint32_t height, std::string&& title)
         : m_width(width)
@@ -59,7 +59,7 @@ public:
         glfwSetCursorPosCallback(m_pGLFWWindow, Window::mouseMoveCallback);
         glfwSetFramebufferSizeCallback(m_pGLFWWindow, Window::framebufferResizeCallback);
         m_elements = std::make_shared<Elements>(numElements);
-        m_vulkanInstance.init(m_pGLFWWindow, m_elements);
+        m_renderer.init(m_pGLFWWindow, m_elements);
     }
 
     void loop(bool flags[], bool flags_prev[], std::mutex& mut)
@@ -77,16 +77,16 @@ public:
                 }
             }
             m_elements->updateMovement(flags);
-            m_vulkanInstance.drawFrame();
+            m_renderer.drawFrame();
         }
-        m_vulkanInstance.idle();
+        m_renderer.idle();
     }
 
     GLFWwindow* getPointer() { return m_pGLFWWindow; }
 
     ~Window()
     {
-        m_vulkanInstance.cleanup();
+        m_renderer.cleanup();
         glfwDestroyWindow(m_pGLFWWindow);
         glfwTerminate();
     }

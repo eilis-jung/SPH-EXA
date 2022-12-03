@@ -50,7 +50,6 @@
 #include "simulation_data.hpp"
 
 #include "insitu_viz.h"
-#include "window.h"
 
 #ifdef USE_CUDA
 using AccType = cstone::GpuTag;
@@ -136,10 +135,6 @@ int main(int argc, char** argv)
     viz::init_catalyst(argc, argv);
     viz::init_ascent(d, domain.startIndex());
 
-    std::string title = "ttt";
-    Window window(800, 600, "ttt");
-    window.init();
-    window.loop();
 
     MasterProcessTimer totalTimer(output, rank);
     totalTimer.start();

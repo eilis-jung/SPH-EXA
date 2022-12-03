@@ -34,7 +34,7 @@ endfunction()
 
 function(enableVisualization exename)
     add_dependencies(${exename} visualization)
-    # target_link_libraries(${exename} PRIVATE visualization)
+    target_link_libraries(${exename} PRIVATE visualization)
 endfunction()
 
 set(exename sphexa)
@@ -43,7 +43,7 @@ target_include_directories(${exename} PRIVATE ${SPH_EXA_INCLUDE_DIRS})
 target_link_libraries(${exename} PRIVATE OpenMP::OpenMP_CXX ${MPI_CXX_LIBRARIES})
 enableH5Part(${exename})
 enableInSituViz(${exename})
-enableVisualization(${exename})
+# enableVisualization(${exename})
 install(TARGETS ${exename} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 if (CMAKE_CUDA_COMPILER)

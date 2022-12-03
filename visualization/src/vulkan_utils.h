@@ -13,7 +13,7 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 
-#include "math.h"
+#include "math_vis.h"
 
 namespace sphexa
 {
